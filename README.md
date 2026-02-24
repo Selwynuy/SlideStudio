@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SlideStudio v2 — TikTok Slide Creator
+
+Welcome to SlideStudio v2, a Next.js application designed to streamline the creation of engaging TikTok-style slide content. This tool provides a user-friendly interface for generating visually appealing slides, complete with customization options for background, text, and descriptions.
+
+## Features
+
+-   **Slide Management:** Create, edit, and organize multiple slides for your TikTok videos.
+-   **Background Customization:** Choose from preset themes, upload custom images, and adjust background properties.
+-   **Text & Description Editing:** Input and style your slide titles and descriptions with various color and alignment options.
+-   **Real-time Preview:** See your slides come to life instantly with a live preview.
+-   **Export Functionality:** Easily export your generated slides for use in your TikTok content.
+-   **AI-Powered Content Generation (Planned/Potential):** Leverage Gemini API for generating punchy titles and descriptions.
 
 ## Getting Started
 
-First, run the development server:
+To get started with SlideStudio v2, follow these steps:
+
+### Prerequisites
+
+-   Node.js (LTS version recommended)
+-   npm or Yarn
+
+### Installation
+
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/your-username/slidestudio-v2.git
+    cd slidestudio-v2
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+
+### Running the Development Server
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+-   `app/`: Contains the main application layout and pages.
+    -   `api/generate/route.ts`: API route for content generation (e.g., using Gemini).
+    -   `layout.tsx`: Root layout for the application.
+    -   `page.tsx`: Main application dashboard.
+-   `components/`: Reusable UI components.
+    -   `BgTab.tsx`: Background customization controls.
+    -   `EditorPanel.tsx`: Main editor interface.
+    -   `RenderedSlide.tsx`: Component responsible for rendering the slide preview.
+    -   `SlideTab.tsx`: Slide content editing controls (text, description).
+    -   `Toast.tsx`: For displaying notifications.
+    -   `Header.tsx`: Application header.
+    -   `InputTab.tsx`: Tab for user input.
+    -   `ExportTab.tsx`, `ExportModal.tsx`: Components related to exporting slides.
+    -   `SlideList.tsx`: List and management of slides.
+-   `lib/`: Utility functions and presets.
+    -   `gemini.ts`: Integration with the Gemini API.
+    -   `presets.ts`: Predefined themes and settings.
+-   `public/`: Static assets (images, fonts).
+-   `types/`: TypeScript type definitions.
+    -   `slide.ts`: Interface for slide data.
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This project is built with Next.js. To learn more about Next.js, check out the official [Next.js Documentation](https://nextjs.org/docs) and [Learn Next.js](https://nextjs.org/learn) tutorial.
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
