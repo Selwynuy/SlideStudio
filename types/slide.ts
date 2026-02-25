@@ -13,4 +13,5 @@ export interface Slide {
   overlayColor: string;
   overlayOpacity: number;
   accentColor: string;
+  eyebrow?: string;
 }

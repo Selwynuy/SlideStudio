@@ -26,11 +26,14 @@ export default function SlideTab({ slide, updateSlide, regenField }: SlideTabPro
     updateSlide({ ...slide, [field]: value });
   };
 
+  // Check if current slide is a hook
+  const isHook = slide.type === "hook";
+
   return (
     <div id="slideEditorContent" style={{ display: "flex", flexDirection: "column" }}>
       <div className="slide-editor-field">
         <div className="sef-label">
-          <span>Slide Type</span>
+          <span>SLIDE TYPE</span>
         </div>
         <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
           <button
@@ -52,15 +55,12 @@ export default function SlideTab({ slide, updateSlide, regenField }: SlideTabPro
             Hook Opener
           </button>
         </div>
-        {slide.type === 'hook' && (
-            <div id="hookExplainer" style={{background:'rgba(255,107,53,0.07)', border:'1px solid rgba(255,107,53,0.2)', borderRadius:'5px', padding:'8px 10px', fontSize:'10px', color:'rgba(255,160,110,0.9)', lineHeight:1.5}}>
-                <strong style={{color:'var(--hook-color)'}}>Hook Slide</strong> — the first slide viewers see. Designed to stop scrolling with a bold question, stat, or claim. Gets larger text, a "STOP SCROLLING" eyebrow, and no description — just the pure hook line.
-            </div>
-        )}
+        {/* Removed the explanatory text as requested */}
       </div>
+      
       <div className="slide-editor-field">
         <div className="sef-label">
-          <span>Text Alignment</span>
+          <span>TEXT ALIGNMENT</span>
         </div>
         <div className="align-btns">
           <button className={`align-btn ${slide.align === 'left' ? 'active' : ''}`} onClick={() => handleChange('align', 'left')} title="Align Left">
@@ -74,40 +74,140 @@ export default function SlideTab({ slide, updateSlide, regenField }: SlideTabPro
           </button>
         </div>
       </div>
+      
+      {/* Hook-specific eyebrow field - FIXED: Now properly displays and editable */}
+      {isHook && (
+        <div className="slide-editor-field">
+          <div className="sef-label">
+            <span style={{color:'var(--hook-color)'}}>EYEBROW TEXT</span> 
+            <span style={{fontSize:'9px',color:'var(--text-dim)'}}>{(slide.eyebrow || "").length}/20</span>
+          </div>
+          <input 
+            className="sef-input" 
+            value={slide.eyebrow || "STOP SCROLLING"} 
+            maxLength={20} 
+            onChange={e => handleChange('eyebrow', e.target.value)} 
+            placeholder="STOP SCROLLING"
+            style={{borderColor: 'rgba(255,107,53,0.3)'}}
+          />
+          <div style={{fontSize:'9px',color:'var(--text-dim)',marginTop:'4px'}}>
+            Small text above the hook (max 2-3 words)
+          </div>
+        </div>
+      )}
+      
+      {/* Title/Hook Line field */}
       <div className="slide-editor-field">
-          <div className="sef-label">Title <span style={{fontSize:'9px',color:'var(--text-dim)'}}>{slide.title.length}/80</span></div>
-          <input className="sef-input" value={slide.title} maxLength={80} onChange={e => handleChange('title', e.target.value)} placeholder="Punchy title (max 6 words)…" />
-          <div style={{display:'flex',alignItems:'center',gap:'8px',marginTop:'8px'}}>
-            <label style={{fontFamily:'"JetBrains Mono",monospace',fontSize:'9px',letterSpacing:'1px',textTransform:'uppercase',color:'var(--text-muted)'}}>Color</label>
-            <input type="color" value={slide.titleColor} onChange={e => handleChange('titleColor', e.target.value)} title="Title text color"/>
-            <div style={{display:'flex',gap:'4px'}}>
-              <button className="color-preset-btn" style={{background:'#ffffff'}} onClick={() => handleChange('titleColor', '#ffffff')} title="White"></button>
-              <button className="color-preset-btn" style={{background:'#000000',borderColor:'#555'}} onClick={() => handleChange('titleColor', '#000000')} title="Black"></button>
-              <button className="color-preset-btn" style={{background:'#fbbf24'}} onClick={() => handleChange('titleColor', '#fbbf24')} title="Amber"></button>
-              <button className="color-preset-btn" style={{background:'#00d4ff'}} onClick={() => handleChange('titleColor', '#00d4ff')} title="Cyan"></button>
-              <button className="color-preset-btn" style={{background:'#ff6b35'}} onClick={() => handleChange('titleColor', '#ff6b35')} title="Orange"></button>
-            </div>
+        <div className="sef-label">
+          {isHook ? (
+            <span style={{color:'var(--hook-color)'}}>HOOK LINE</span>
+          ) : (
+            <span>TITLE</span>
+          )} 
+          <span style={{fontSize:'9px',color:'var(--text-dim)'}}>{slide.title.length}/{isHook ? 60 : 80}</span>
+        </div>
+        <input 
+          className="sef-input" 
+          value={slide.title} 
+          maxLength={isHook ? 60 : 80} 
+          onChange={e => handleChange('title', e.target.value)} 
+          placeholder={isHook ? "Your powerful hook line (max 4-5 words)…" : "Punchy title (max 6 words)…"}
+          style={isHook ? {borderColor: 'rgba(255,107,53,0.3)'} : {}}
+        />
+        
+        {/* Hook-specific suggestions */}
+        {isHook && (
+          <div style={{display:'flex',flexWrap:'wrap',gap:'4px',marginTop:'6px'}}>
+            <button 
+              className="suggestion-btn" 
+              onClick={() => handleChange('title', "Stop scrolling if you want to…")}
+              style={{fontSize:'9px',padding:'2px 6px',background:'rgba(255,107,53,0.1)',border:'1px solid rgba(255,107,53,0.2)',borderRadius:'4px',color:'var(--hook-color)'}}
+            >
+              Stop scrolling…
+            </button>
+            <button 
+              className="suggestion-btn" 
+              onClick={() => handleChange('title', "The #1 mistake people make")}
+              style={{fontSize:'9px',padding:'2px 6px',background:'rgba(255,107,53,0.1)',border:'1px solid rgba(255,107,53,0.2)',borderRadius:'4px',color:'var(--hook-color)'}}
+            >
+              The #1 mistake…
+            </button>
+            <button 
+              className="suggestion-btn" 
+              onClick={() => handleChange('title', "Most people don't know this…")}
+              style={{fontSize:'9px',padding:'2px 6px',background:'rgba(255,107,53,0.1)',border:'1px solid rgba(255,107,53,0.2)',borderRadius:'4px',color:'var(--hook-color)'}}
+            >
+              Most people don't know…
+            </button>
           </div>
-      </div>
-       <div className="slide-editor-field">
-          <div className="sef-label">Description <span style={{fontSize:'9px',color:'var(--text-dim)'}}>{slide.description.length}/300</span></div>
-          <textarea className="sef-textarea" value={slide.description} maxLength={300} onChange={e => handleChange('description', e.target.value)} placeholder="1–3 sentences…"></textarea>
-          <div style={{display:'flex',alignItems:'center',gap:'8px',marginTop:'8px'}}>
-            <label style={{fontFamily:'"JetBrains Mono",monospace',fontSize:'9px',letterSpacing:'1px',textTransform:'uppercase',color:'var(--text-muted)'}}>Color</label>
-            <input type="color" value={slide.descColor} onChange={e => handleChange('descColor', e.target.value)} title="Description text color"/>
-            <div style={{display:'flex',gap:'4px'}}>
-                <button className="color-preset-btn" style={{background:'#ffffff'}} onClick={() => handleChange('descColor', '#ffffff')} title="White"></button>
-                <button className="color-preset-btn" style={{background:'#d4d4d4'}} onClick={() => handleChange('descColor', '#d4d4d4')} title="Light grey"></button>
-                <button className="color-preset-btn" style={{background:'#a3a3a3'}} onClick={() => handleChange('descColor', '#a3a3a3')} title="Mid grey"></button>
-                <button className="color-preset-btn" style={{background:'#fbbf24'}} onClick={() => handleChange('descColor', '#fbbf24')} title="Amber"></button>
-                <button className="color-preset-btn" style={{background:'#00d4ff'}} onClick={() => handleChange('descColor', '#00d4ff')} title="Cyan"></button>
-            </div>
+        )}
+        
+        <div style={{display:'flex',alignItems:'center',gap:'8px',marginTop:'8px'}}>
+          <label style={{fontFamily:'"JetBrains Mono",monospace',fontSize:'9px',letterSpacing:'1px',textTransform:'uppercase',color:'var(--text-muted)'}}>COLOR</label>
+          <input type="color" value={slide.titleColor} onChange={e => handleChange('titleColor', e.target.value)} title="Title text color"/>
+          <div style={{display:'flex',gap:'4px'}}>
+            <button className="color-preset-btn" style={{background:'#ffffff'}} onClick={() => handleChange('titleColor', '#ffffff')} title="White"></button>
+            <button className="color-preset-btn" style={{background:'#000000',borderColor:'#555'}} onClick={() => handleChange('titleColor', '#000000')} title="Black"></button>
+            <button className="color-preset-btn" style={{background:'#fbbf24'}} onClick={() => handleChange('titleColor', '#fbbf24')} title="Amber"></button>
+            <button className="color-preset-btn" style={{background:'#00d4ff'}} onClick={() => handleChange('titleColor', '#00d4ff')} title="Cyan"></button>
+            <button className="color-preset-btn" style={{background:'#ff6b35'}} onClick={() => handleChange('titleColor', '#ff6b35')} title="Orange"></button>
           </div>
+        </div>
       </div>
+      
+      {/* Description field - FIXED: Now editable for normal slides, shows preview for hooks */}
+      <div className="slide-editor-field">
+        <div className="sef-label">
+          {isHook ? (
+            <>
+              <span>DESCRIPTION</span>
+            </>
+          ) : (
+            <span>DESCRIPTION</span>
+          )}
+          <span style={{fontSize:'9px',color:'var(--text-dim)',marginLeft:'auto'}}>{slide.description.length}/300</span>
+        </div>
+        <textarea 
+          className="sef-textarea" 
+          value={slide.description} 
+          maxLength={300} 
+          onChange={e => handleChange('description', e.target.value)} 
+          placeholder={isHook ? "Description won't appear on hook slides (just for reference)" : "1–3 sentences…"}
+          style={isHook ? {background:'rgba(0,0,0,0.05)',borderColor:'rgba(255,255,255,0.1)'} : {}}
+          disabled={false}  
+        ></textarea>
+        
+        {isHook && (
+          <div style={{fontSize:'9px',color:'var(--text-dim)',marginTop:'4px'}}>
+            Hook slides show only the eyebrow and hook line for maximum impact. 
+            Description is saved but not displayed.
+          </div>
+        )}
+        
+        <div style={{display:'flex',alignItems:'center',gap:'8px',marginTop:'8px'}}>
+          <label style={{fontFamily:'"JetBrains Mono",monospace',fontSize:'9px',letterSpacing:'1px',textTransform:'uppercase',color:'var(--text-muted)'}}>COLOR</label>
+          <input type="color" value={slide.descColor} onChange={e => handleChange('descColor', e.target.value)} title="Description text color"/>
+          <div style={{display:'flex',gap:'4px'}}>
+            <button className="color-preset-btn" style={{background:'#ffffff'}} onClick={() => handleChange('descColor', '#ffffff')} title="White"></button>
+            <button className="color-preset-btn" style={{background:'#d4d4d4'}} onClick={() => handleChange('descColor', '#d4d4d4')} title="Light grey"></button>
+            <button className="color-preset-btn" style={{background:'#a3a3a3'}} onClick={() => handleChange('descColor', '#a3a3a3')} title="Mid grey"></button>
+            <button className="color-preset-btn" style={{background:'#fbbf24'}} onClick={() => handleChange('descColor', '#fbbf24')} title="Amber"></button>
+            <button className="color-preset-btn" style={{background:'#00d4ff'}} onClick={() => handleChange('descColor', '#00d4ff')} title="Cyan"></button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Regenerate buttons */}
       <div className="regen-strip">
-          <button className="regen-btn" onClick={() => regenField('title')}>↻ Title</button>
-          <button className="regen-btn" onClick={() => regenField('description')}>↻ Desc</button>
-          <button className="regen-btn" onClick={() => regenField('both')}>↻ Both</button>
+        <button className="regen-btn" onClick={() => regenField('title')} style={isHook ? {borderColor:'rgba(255,107,53,0.3)'} : {}}>
+          {isHook ? '↻ Generate New Hook' : '↻ Title'}
+        </button>
+        <button className="regen-btn" onClick={() => regenField('description')} style={isHook ? {borderColor:'rgba(255,107,53,0.3)'} : {}}>
+          {isHook ? '↻ Generate Desc' : '↻ Desc'}
+        </button>
+        <button className="regen-btn" onClick={() => regenField('both')} style={isHook ? {borderColor:'rgba(255,107,53,0.3)'} : {}}>
+          {isHook ? '↻ Regenerate Both' : '↻ Both'}
+        </button>
       </div>
     </div>
   );

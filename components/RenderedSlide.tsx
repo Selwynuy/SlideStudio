@@ -40,7 +40,7 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
           ></div>
           <div className={`slide-content-layer align-${slide.align}`}>
             {slide.type === "hook" && (
-              <div className="sld-hook-eyebrow">STOP SCROLLING →</div>
+              <div className="sld-hook-eyebrow">{slide.eyebrow || "STOP SCROLLING →"}</div>
             )}
             <div className="sld-num">
               {slide.type === "hook" ? "HOOK" : String(slide.id).padStart(2, "0")}
