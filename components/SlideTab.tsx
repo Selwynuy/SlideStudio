@@ -164,6 +164,63 @@ export default function SlideTab({
             <button className="color-preset-btn" style={{background:'#ff6b35'}} onClick={() => handleChange('titleColor', '#ff6b35')} title="Orange"></button>
           </div>
         </div>
+
+        <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+          <div style={{ flex: 1 }}>
+            <label
+              style={{
+                display: "block",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "9px",
+                letterSpacing: "1px",
+                textTransform: "uppercase",
+                color: "var(--text-muted)",
+                marginBottom: "4px",
+              }}
+            >
+              Font
+            </label>
+            <select
+              className="ctrl-select"
+              value={slide.titleFontFamily || "bebas"}
+              onChange={(e) =>
+                handleChange("titleFontFamily", e.target.value as any)
+              }
+            >
+              <option value="bebas">Bebas Neue</option>
+              <option value="jakarta">Sans (Plus Jakarta)</option>
+              <option value="mono">Mono (JetBrains)</option>
+            </select>
+          </div>
+          <div style={{ width: "72px" }}>
+            <label
+              style={{
+                display: "block",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "9px",
+                letterSpacing: "1px",
+                textTransform: "uppercase",
+                color: "var(--text-muted)",
+                marginBottom: "4px",
+              }}
+            >
+              Size
+            </label>
+            <input
+              type="number"
+              min={16}
+              max={72}
+              className="ctrl-input"
+              value={slide.titleFontSize ?? 30}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (!Number.isNaN(value)) {
+                  handleChange("titleFontSize", value);
+                }
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Description field - FIXED: Now editable for normal slides, shows preview for hooks */}
@@ -204,6 +261,63 @@ export default function SlideTab({
             <button className="color-preset-btn" style={{background:'#a3a3a3'}} onClick={() => handleChange('descColor', '#a3a3a3')} title="Mid grey"></button>
             <button className="color-preset-btn" style={{background:'#fbbf24'}} onClick={() => handleChange('descColor', '#fbbf24')} title="Amber"></button>
             <button className="color-preset-btn" style={{background:'#00d4ff'}} onClick={() => handleChange('descColor', '#00d4ff')} title="Cyan"></button>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+          <div style={{ flex: 1 }}>
+            <label
+              style={{
+                display: "block",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "9px",
+                letterSpacing: "1px",
+                textTransform: "uppercase",
+                color: "var(--text-muted)",
+                marginBottom: "4px",
+              }}
+            >
+              Font
+            </label>
+            <select
+              className="ctrl-select"
+              value={slide.descFontFamily || "jakarta"}
+              onChange={(e) =>
+                handleChange("descFontFamily", e.target.value as any)
+              }
+            >
+              <option value="jakarta">Sans (Plus Jakarta)</option>
+              <option value="bebas">Bebas Neue</option>
+              <option value="mono">Mono (JetBrains)</option>
+            </select>
+          </div>
+          <div style={{ width: "72px" }}>
+            <label
+              style={{
+                display: "block",
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "9px",
+                letterSpacing: "1px",
+                textTransform: "uppercase",
+                color: "var(--text-muted)",
+                marginBottom: "4px",
+              }}
+            >
+              Size
+            </label>
+            <input
+              type="number"
+              min={8}
+              max={28}
+              className="ctrl-input"
+              value={slide.descFontSize ?? 10}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (!Number.isNaN(value)) {
+                  handleChange("descFontSize", value);
+                }
+              }}
+            />
           </div>
         </div>
       </div>

@@ -7,6 +7,14 @@ export interface Slide {
   description: string;
   titleColor: string;
   descColor: string;
+  /** Per-slide title font size in px (preview canvas scale) */
+  titleFontSize?: number;
+  /** Per-slide description font size in px (preview canvas scale) */
+  descFontSize?: number;
+  /** Logical font choice for title */
+  titleFontFamily?: "bebas" | "jakarta" | "mono";
+  /** Logical font choice for description */
+  descFontFamily?: "bebas" | "jakarta" | "mono";
   align: "left" | "center" | "right";
   bgPresetIdx: number;
   bgImage: string | null;

@@ -19,6 +19,27 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
       opacity: slide.overlayOpacity / 100,
     };
 
+    const baseTitleSize = slide.titleFontSize ?? 30;
+    const baseDescSize = slide.descFontSize ?? 10;
+
+    // Scale preview sizes up for 1080x1920 export while keeping current feel
+    const exportTitleSize = baseTitleSize * 3.2; // 30 * 3.2 = 96
+    const exportDescSize = baseDescSize * 4.6; // 10 * 4.6 = 46
+
+    const titleFontFamily =
+      slide.titleFontFamily === "jakarta"
+        ? "'Plus Jakarta Sans', sans-serif"
+        : slide.titleFontFamily === "mono"
+        ? "'JetBrains Mono', monospace"
+        : "'Bebas Neue', sans-serif";
+
+    const descFontFamily =
+      slide.descFontFamily === "bebas"
+        ? "'Bebas Neue', sans-serif"
+        : slide.descFontFamily === "mono"
+        ? "'JetBrains Mono', monospace"
+        : "'Plus Jakarta Sans', sans-serif";
+
     return (
       <div
         ref={ref}
@@ -45,7 +66,15 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
             <div className="sld-num">
               {slide.type === "hook" ? "HOOK" : String(slide.id).padStart(2, "0")}
             </div>
-            <div className="sld-title" style={{ color: slide.titleColor, fontSize: '96px', lineHeight: '1.1' }}>
+            <div
+              className="sld-title"
+              style={{
+                color: slide.titleColor,
+                fontSize: `${exportTitleSize}px`,
+                lineHeight: "1.1",
+                fontFamily: titleFontFamily,
+              }}
+            >
               {slide.title}
             </div>
             {slide.dividerEnabled ?? true ? (
@@ -54,7 +83,15 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
                 style={{ background: slide.accentColor }}
               ></div>
             ) : null}
-            <div className="sld-desc" style={{ color: slide.descColor, fontSize: '46px', lineHeight: '1.6' }}>
+            <div
+              className="sld-desc"
+              style={{
+                color: slide.descColor,
+                fontSize: `${exportDescSize}px`,
+                lineHeight: "1.6",
+                fontFamily: descFontFamily,
+              }}
+            >
               {slide.description}
             </div>
           </div>

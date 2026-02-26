@@ -59,6 +59,186 @@ header {
 .badge-hook { background: rgba(255,107,53,0.12); color: var(--hook-color); border: 1px solid rgba(255,107,53,0.2); }
 .hdr-right { display: flex; gap: 8px; align-items: center; }
 
+/* Mobile hamburger toggle (hidden by default) */
+.hdr-toggle {
+  display: none;
+  width: 32px;
+  height: 32px;
+  margin-left: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.hdr-toggle:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+.hdr-toggle-lines {
+  position: relative;
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transition: transform 0.22s ease, background 0.22s ease;
+}
+
+.hdr-toggle-lines::before,
+.hdr-toggle-lines::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.hdr-toggle-lines::before {
+  top: -5px;
+}
+
+.hdr-toggle-lines::after {
+  top: 5px;
+}
+
+/* Small visual change when menu is open */
+.nav-open .hdr-toggle-lines {
+  background: transparent;
+}
+
+.nav-open .hdr-toggle-lines::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+
+.nav-open .hdr-toggle-lines::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
+
+/* Mobile overlay menu container + right drawer */
+.hdr-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: stretch !important;
+  justify-content: flex-end !important;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+}
+
+.hdr-menu-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hdr-menu {
+  width: 75vw;
+  max-width: 340px;
+  margin: 0;
+  background: var(--bg2);
+  border-radius: 16px 0 0 16px;
+  padding: 20px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 12px;
+  transform: translateX(100%);
+  opacity: 0;
+  transition:
+    transform 0.3s ease,
+    opacity 0.25s ease;
+}
+
+.hdr-menu-overlay.open .hdr-menu {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.hdr-menu-close {
+  align-self: flex-end;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 0 8px;
+}
+
+.hdr-menu-item {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Hide overlay on larger screens */
+@media (min-width: 1025px) {
+  .hdr-menu-overlay {
+    display: none !important;
+  }
+}
+
+/* Header + sidebar responsiveness (tablet + phone) */
+@media (max-width: 1024px) {
+  header {
+    padding: 0 16px;
+  }
+
+  .logo {
+    font-size: 22px;
+  }
+
+  .hdr-center {
+    gap: 10px;
+    font-size: 9px;
+  }
+
+  .hdr-right {
+    gap: 6px;
+  }
+
+  /* Tablet + phone: use hamburger + drawer, hide workspace sidebar list */
+  .hdr-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+
+  .hdr-center,
+  .hdr-right {
+    display: none;
+  }
+
+  .workspace .panel-left {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  header {
+    height: auto;
+    padding: 8px 12px;
+    align-items: center;
+  }
+
+  .logo {
+    font-size: 20px;
+  }
+
+  .hdr-badge {
+    font-size: 8px;
+    padding: 2px 6px;
+  }
+}
+
 /* ─── BUTTONS ─────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; gap: 5px;
@@ -155,6 +335,26 @@ header {
   font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;
 }
 
+/* Slide list when shown inside the header drawer */
+.hdr-menu .panel-left {
+  border: none;
+  background: transparent;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.hdr-menu .panel-left-header {
+  padding: 8px 0 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hdr-menu .slide-list-scroll {
+  padding: 8px 0 0;
+  max-height: calc(100vh - 180px);
+}
+
 /* ─── CENTER: PREVIEW ────────────────────────── */
 .panel-center {
   display: flex; flex-direction: column;
@@ -169,14 +369,15 @@ header {
   flex-shrink: 0; background: var(--bg2);
 }
 .preview-scroll {
-  flex: 1; overflow-y: auto; overflow-x: hidden;
+  flex: 1; overflow: hidden;
   display: flex; flex-direction: column; align-items: center;
   justify-content: flex-start; padding: 24px 20px;
   gap: 0;
 }
 /* The 9:16 phone frame — realistic proportions */
 .phone-frame {
-  width: 300px; height: 650px;
+  width: 300px;
+  height: 650px;
   border-radius: 44px;
   border: 8px solid #1a1a1a;
   outline: none;
@@ -578,3 +779,108 @@ input[type=color] {
 }
 .color-preset-btn:hover { transform: scale(1.25); border-color: rgba(255,255,255,0.5); }
 
+/* ─── RESPONSIVE LAYOUTS ───────────────────────── */
+
+/* Tablet and small desktop: stack SlideList below, keep Preview + Editor side by side */
+@media (max-width: 1199px) {
+  .workspace {
+    grid-template-columns: minmax(260px, 1.1fr) minmax(320px, 1.2fr);
+    grid-auto-rows: minmax(0, auto);
+  }
+
+  .panel-center {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .panel-right {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .panel-left {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    border-right: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .slide-list-scroll {
+    max-height: 220px;
+  }
+}
+
+/* Phone: single column, compact slide list strip */
+@media (max-width: 768px) {
+  html,
+  body {
+    height: auto;
+    overflow: auto;
+  }
+
+  body {
+    display: block;
+  }
+
+  .workspace {
+    display: flex;
+    flex-direction: column;
+    flex: initial;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .panel-left,
+  .panel-center,
+  .panel-right {
+    width: 100%;
+  }
+
+  .panel-left {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-right {
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+
+  .preview-toolbar {
+    padding: 8px 12px;
+  }
+
+  .preview-scroll {
+    padding: 16px 12px;
+  }
+
+  .panel-left-header {
+    padding: 8px 10px;
+  }
+
+  .slide-list-scroll {
+    padding: 8px 10px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+
+  .slide-thumb {
+    padding: 8px 9px;
+  }
+
+  .slide-thumb-title {
+    font-size: 11px;
+  }
+
+  .slide-thumb-desc {
+    font-size: 9px;
+  }
+
+  .tabs {
+    font-size: 9px;
+  }
+
+  .tab {
+    padding: 8px 2px;
+  }
+}

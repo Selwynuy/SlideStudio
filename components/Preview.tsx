@@ -1,8 +1,11 @@
 "use client";
 
 import { Slide } from "@/types/slide";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BG_PRESETS } from "@/lib/presets";
+
+const BASE_FRAME_WIDTH = 300;
+const BASE_FRAME_HEIGHT = 650;
 
 interface PreviewProps {
   slide: Slide | null;
@@ -14,6 +17,10 @@ interface PreviewProps {
 
 export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides }: PreviewProps) {
   const [showTikTokUI, setShowTikTokUI] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
+  const navRef = useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = useState(1);
 
   const bgStyle = slide
     ? slide.bgImage
@@ -28,8 +35,99 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
       }
     : { backgroundColor: "rgba(0,0,0,0.4)" };
 
+  const baseTitleSize = slide?.titleFontSize ?? 30;
+  const baseDescSize = slide?.descFontSize ?? 9.5;
+  const previewScale = scale || 1;
+  const titleFontSize = Math.max(14, baseTitleSize * previewScale);
+  const descFontSize = Math.max(8, baseDescSize * previewScale);
+
+  const titleFontFamily =
+    slide?.titleFontFamily === "jakarta"
+      ? "'Plus Jakarta Sans', sans-serif"
+      : slide?.titleFontFamily === "mono"
+      ? "'JetBrains Mono', monospace"
+      : "'Bebas Neue', sans-serif";
+
+  const descFontFamily =
+    slide?.descFontFamily === "bebas"
+      ? "'Bebas Neue', sans-serif"
+      : slide?.descFontFamily === "mono"
+      ? "'JetBrains Mono', monospace"
+      : "'Plus Jakarta Sans', sans-serif";
+
+  useEffect(() => {
+    const runId = "tablet-tuning";
+    const hypothesisId = "H3-fixed-base-frame";
+
+    const updateScale = () => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      const navHeight = navRef.current?.offsetHeight ?? 0;
+
+      // Leave generous breathing room and account for preview-nav height.
+      // On mobile we reserve a bit less margin so the frame can grow a touch more.
+      const isMobileWidth = containerWidth <= 768;
+      const sideMargin = isMobileWidth ? 40 : 80;
+      const verticalMargin = isMobileWidth ? 40 : 80;
+
+      const availableWidth = containerWidth - sideMargin;
+      const availableHeight = containerHeight - navHeight - verticalMargin;
+
+      const widthScale =
+        BASE_FRAME_WIDTH > 0 && availableWidth > 0
+          ? availableWidth / BASE_FRAME_WIDTH
+          : 1;
+      const heightScale =
+        BASE_FRAME_HEIGHT > 0 && availableHeight > 0
+          ? availableHeight / BASE_FRAME_HEIGHT
+          : 1;
+
+      const rawScale = Math.min(1, widthScale, heightScale);
+      const nextScale = Number.isFinite(rawScale) && rawScale > 0 ? rawScale : 1;
+
+      setScale(nextScale);
+
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7244/ingest/767ff8dc-bed7-43dd-ad0d-9119824793f1",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: `log_${Date.now()}`,
+            runId,
+            hypothesisId,
+            location: "components/Preview.tsx:updateScale",
+            message: "Updated phone-frame scale",
+            data: {
+              containerWidth,
+              containerHeight,
+              isMobileWidth,
+              sideMargin,
+              verticalMargin,
+              widthScale,
+              heightScale,
+              navHeight,
+              availableHeight,
+              nextScale,
+            },
+            timestamp: Date.now(),
+          }),
+        }
+      ).catch(() => {});
+      // #endregion
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
+
   return (
-    <div className="panel-center">
+    <div className="panel-center" ref={containerRef}>
       <div className="preview-toolbar">
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <span
@@ -75,7 +173,15 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
       </div>
 
       <div className="preview-scroll" id="previewScroll">
-        <div className="phone-frame" id="phoneFrame">
+        <div
+          className="phone-frame"
+          id="phoneFrame"
+          ref={frameRef}
+          style={{
+            width: BASE_FRAME_WIDTH * scale,
+            height: BASE_FRAME_HEIGHT * scale,
+          }}
+        >
           <div className="phone-notch"></div>
           <div className="phone-home"></div>
 
@@ -149,7 +255,14 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
                     ? "HOOK"
                     : String(slideIndex + 1).padStart(2, "0")}
                 </div>
-                <div className="sld-title" style={{ color: slide.titleColor }}>
+                <div
+                  className="sld-title"
+                  style={{
+                    color: slide.titleColor,
+                    fontSize: `${titleFontSize}px`,
+                    fontFamily: titleFontFamily,
+                  }}
+                >
                   {slide.title}
                 </div>
                 {slide.dividerEnabled ?? true ? (
@@ -158,7 +271,14 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
                     style={{ background: slide.accentColor }}
                   ></div>
                 ) : null}
-                <div className="sld-desc" style={{ color: slide.descColor }}>
+                <div
+                  className="sld-desc"
+                  style={{
+                    color: slide.descColor,
+                    fontSize: `${descFontSize}px`,
+                    fontFamily: descFontFamily,
+                  }}
+                >
                   {slide.description}
                 </div>
               </div>
@@ -173,7 +293,7 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
           </div>
         </div>
 
-        <div className="preview-nav">
+        <div className="preview-nav" ref={navRef}>
           <button
             className="nav-btn"
             onClick={onPrev}

@@ -126,6 +126,10 @@ export default function Home() {
       accentColor: bgMaster?.accentColor ?? "#00d4ff",
       titleColor: textMaster?.titleColor ?? "#ffffff",
       descColor: textMaster?.descColor ?? "#d4d4d4",
+      titleFontSize: textMaster?.titleFontSize ?? 30,
+      descFontSize: textMaster?.descFontSize ?? 10,
+      titleFontFamily: textMaster?.titleFontFamily ?? "bebas",
+      descFontFamily: textMaster?.descFontFamily ?? "jakarta",
       dividerEnabled: bgMaster?.dividerEnabled ?? true,
     };
     const newSlides = [...slides, newSlide];
@@ -191,6 +195,10 @@ export default function Home() {
               align: updated.align,
               titleColor: updated.titleColor,
               descColor: updated.descColor,
+              titleFontSize: updated.titleFontSize,
+              descFontSize: updated.descFontSize,
+              titleFontFamily: updated.titleFontFamily,
+              descFontFamily: updated.descFontFamily,
             }
       );
     }
@@ -225,6 +233,10 @@ export default function Home() {
         align: source.align,
         titleColor: source.titleColor,
         descColor: source.descColor,
+        titleFontSize: source.titleFontSize,
+        descFontSize: source.descFontSize,
+        titleFontFamily: source.titleFontFamily,
+        descFontFamily: source.descFontFamily,
       }))
     );
     showToast("Applied text styles to all slides", "ok");
@@ -315,6 +327,10 @@ Rules:
           accentColor: "#00d4ff",
           titleColor: "#ffffff",
           descColor: "#d4d4d4",
+          titleFontSize: 30,
+          descFontSize: 10,
+          titleFontFamily: "bebas",
+          descFontFamily: "jakarta",
           dividerEnabled: true,
         }));
 
@@ -451,6 +467,15 @@ Return: {"description":"..."}`;
           setSlides([]);
           setActiveIdx(null);
         }}
+        slides={slides}
+        activeIdx={activeIdx}
+        setActiveIdx={(idx) => {
+          setActiveIdx(idx);
+          setActiveTab("slide");
+        }}
+        onAddSlide={addSlide}
+        onMoveSlide={moveSlide}
+        onDeleteSlide={deleteSlide}
       />
 
       <main className="workspace">
