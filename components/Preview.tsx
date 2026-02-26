@@ -18,8 +18,8 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
   const bgStyle = slide
     ? slide.bgImage
       ? { backgroundImage: `url(${slide.bgImage})` }
-      : { background: BG_PRESETS[slide.bgPresetIdx]?.css || '#111' }
-    : { background: "#111" };
+      : { background: BG_PRESETS[slide.bgPresetIdx]?.css || "var(--bg3)" }
+    : { background: "var(--bg3)" };
 
   const overlayStyle = slide
     ? {

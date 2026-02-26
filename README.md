@@ -22,7 +22,6 @@ Welcome to SlideStudio v2, a powerful Next.js application designed to empower co
 -   **Flexible Export Capabilities:**
     -   Export individual or all slides as high-quality PNG or JPG images.
     -   Export your slide data as a JSON file for backup or further programmatic use.
--   **Dynamic Theming:** Toggle between light and dark modes for a comfortable editing experience.
 -   **Toast Notifications:** Receive instant feedback on generation status, exports, and other actions.
 
 ## Getting Started
@@ -76,7 +75,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     -   `EditorPanel.tsx`: The central control panel for content generation settings and actions.
     -   `ExportModal.tsx`: Displays progress and status during slide export operations.
     -   `ExportTab.tsx`: UI for configuring export settings.
-    -   `Header.tsx`: Application header, managing session and theme toggles.
+    -   `Header.tsx`: Application header, showing session info and actions.
     -   `InputTab.tsx`: Component for raw text input and generation settings.
     -   `Preview.tsx`: Displays the current active slide in real-time.
     -   `RenderedSlide.tsx`: The component responsible for rendering the actual visual output of a slide.

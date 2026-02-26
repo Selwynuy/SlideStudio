@@ -8,6 +8,7 @@ import Preview from "@/components/Preview";
 import EditorPanel from "@/components/EditorPanel";
 import Toast from "@/components/Toast";
 import ExportModal from "@/components/ExportModal";
+import ConfirmModal from "@/components/ConfirmModal";
 import { callGemini } from "@/lib/gemini";
 import html2canvas from "html2canvas";
 import RenderedSlide from "@/components/RenderedSlide";
@@ -15,7 +16,6 @@ import RenderedSlide from "@/components/RenderedSlide";
 export default function Home() {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
-  const [theme, setTheme] = useState("dark");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Generating slides…");
   const [sourceText, setSourceText] = useState("");
@@ -33,6 +33,7 @@ export default function Home() {
   const [slideForExport, setSlideForExport] = useState<Slide | null>(null);
   const [exportFormat, setExportFormat] = useState<'png' | 'jpg'>('png');
   const [brandingEnabled, setBrandingEnabled] = useState(false);
+  const [pendingDeleteIdx, setPendingDeleteIdx] = useState<number | null>(null);
   const renderRef = React.useRef<HTMLDivElement>(null);
 
   // Generation Settings
@@ -42,14 +43,6 @@ export default function Home() {
   const [maxSlides, setMaxSlides] = useState(8);
   const [focus, setFocus] = useState("key_points");
   const [hook, setHook] = useState(true);
-
-  useEffect(() => {
-    if (theme === "light") {
-      document.body.classList.add("light-mode");
-    } else {
-      document.body.classList.remove("light-mode");
-    }
-  }, [theme]);
 
   // Export trigger effect - sets up the next slide to export
   useEffect(() => {
@@ -109,10 +102,6 @@ export default function Home() {
     }
   }
 
-  function toggleTheme() {
-    setTheme(theme === "light" ? "dark" : "light");
-  }
-
   function addSlide() {
     const newSlide: Slide = {
       id: Date.now().toString(),
@@ -145,13 +134,25 @@ export default function Home() {
   }
 
   function deleteSlide(index: number) {
-    if (!window.confirm("Delete this slide?")) return;
+    // Open center modal asking for confirmation
+    setPendingDeleteIdx(index);
+  }
+
+  function confirmDeleteSlide() {
+    if (pendingDeleteIdx === null) return;
+
+    const index = pendingDeleteIdx;
     const newSlides = slides.filter((_, i) => i !== index);
     setSlides(newSlides);
     setActiveIdx(
       activeIdx === index ? Math.min(index, newSlides.length - 1) : activeIdx
     );
+    setPendingDeleteIdx(null);
     showToast("Slide deleted", "err");
+  }
+
+  function cancelDeleteSlide() {
+    setPendingDeleteIdx(null);
   }
 
   function updateSlide(updated: Slide) {
@@ -373,6 +374,15 @@ Return: {"description":"..."}`;
         type={toastType}
         onHide={() => setToastMessage("")}
       />
+      <ConfirmModal
+        isOpen={pendingDeleteIdx !== null}
+        title="Delete this slide?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={confirmDeleteSlide}
+        onCancel={cancelDeleteSlide}
+      />
       <ExportModal
         isOpen={isExporting}
         progress={exportProgress}
@@ -387,7 +397,6 @@ Return: {"description":"..."}`;
           setSlides([]);
           setActiveIdx(null);
         }}
-        onToggleTheme={toggleTheme}
       />
 
       <main className="workspace">

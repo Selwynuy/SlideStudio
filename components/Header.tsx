@@ -3,13 +3,11 @@
 interface HeaderProps {
   slideCount: number;
   onNewSession: () => void;
-  onToggleTheme: () => void;
 }
 
 export default function Header({
   slideCount,
   onNewSession,
-  onToggleTheme,
 }: HeaderProps) {
   return (
     <header>
@@ -27,15 +25,6 @@ export default function Header({
 
       <div className="hdr-right">
         <span className="hdr-badge badge-cyan">✦ GEMINI AI</span>
-        <button
-          className="btn btn-ghost btn-sm"
-          id="themeToggleBtn"
-          onClick={onToggleTheme}
-          title="Toggle light/dark mode"
-          style={{ padding: "5px 10px", fontSize: "16px", lineHeight: "1" }}
-        >
-          🌙
-        </button>
         <button
           className="btn btn-ghost btn-sm"
           onClick={onNewSession}
