@@ -152,10 +152,12 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
                 <div className="sld-title" style={{ color: slide.titleColor }}>
                   {slide.title}
                 </div>
-                <div
-                  className="sld-divider"
-                  style={{ background: slide.accentColor }}
-                ></div>
+                {slide.dividerEnabled ?? true ? (
+                  <div
+                    className="sld-divider"
+                    style={{ background: slide.accentColor }}
+                  ></div>
+                ) : null}
                 <div className="sld-desc" style={{ color: slide.descColor }}>
                   {slide.description}
                 </div>

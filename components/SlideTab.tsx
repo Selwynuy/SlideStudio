@@ -8,6 +8,8 @@ interface SlideTabProps {
   updateSlide: (updated: Slide) => void;
   regenField: (field: "title" | "description" | "both") => Promise<void>;
   applyTextStyleToAll: () => void;
+  textStyleMasterId: string | null;
+  setTextStyleMasterId: (id: string | null) => void;
 }
 
 export default function SlideTab({
@@ -15,6 +17,8 @@ export default function SlideTab({
   updateSlide,
   regenField,
   applyTextStyleToAll,
+  textStyleMasterId,
+  setTextStyleMasterId,
 }: SlideTabProps) {
   if (!slide) {
     return (
@@ -34,6 +38,7 @@ export default function SlideTab({
 
   // Check if current slide is a hook
   const isHook = slide.type === "hook";
+  const isTextMaster = textStyleMasterId === slide.id;
 
   return (
     <div id="slideEditorContent" style={{ display: "flex", flexDirection: "column" }}>
@@ -212,6 +217,29 @@ export default function SlideTab({
         >
           Apply text styles to all
         </button>
+      </div>
+
+      {/* Always apply settings (text master) */}
+      <div className="slide-editor-field" style={{ marginTop: "4px" }}>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            fontSize: "11px",
+            color: "var(--text-muted)",
+            cursor: "pointer",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={isTextMaster}
+            onChange={(e) =>
+              setTextStyleMasterId(e.target.checked ? slide.id : null)
+            }
+          />
+          <span>Always apply these text settings</span>
+        </label>
       </div>
 
       {/* Regenerate buttons */}

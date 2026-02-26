@@ -9,9 +9,17 @@ interface BgTabProps {
   slide: Slide | null;
   updateSlide: (updated: Slide) => void;
   applyBgToAll: () => void;
+  bgStyleMasterId: string | null;
+  setBgStyleMasterId: (id: string | null) => void;
 }
 
-export default function BgTab({ slide, updateSlide, applyBgToAll }: BgTabProps) {
+export default function BgTab({
+  slide,
+  updateSlide,
+  applyBgToAll,
+  bgStyleMasterId,
+  setBgStyleMasterId,
+}: BgTabProps) {
     if (!slide) {
         return (
             <div id="bgEditorEmpty" className="empty-right">
@@ -24,6 +32,8 @@ export default function BgTab({ slide, updateSlide, applyBgToAll }: BgTabProps) 
     const handleChange = (field: keyof Slide, value: any) => {
         updateSlide({ ...slide, [field]: value });
     };
+
+    const isBgMaster = bgStyleMasterId === slide.id;
 
     const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -85,21 +95,57 @@ export default function BgTab({ slide, updateSlide, applyBgToAll }: BgTabProps) 
             </div>
             <div className="ctrl-section">
                 <div className="ctrl-label">Accent Color <span></span></div>
-                <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-                    <input type="color" value={slide.accentColor} onInput={e => handleChange('accentColor', e.currentTarget.value)} />
-                    <span style={{fontSize:'11px',color:'var(--text-muted)'}}>Divider line color</span>
+                <div style={{display:'flex',flexDirection:'column',gap:'6px'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',opacity: slide.dividerEnabled ?? true ? 1 : 0.4}}>
+                        <input
+                          type="color"
+                          value={slide.accentColor}
+                          onInput={e => handleChange('accentColor', e.currentTarget.value)}
+                          disabled={slide.dividerEnabled === false}
+                        />
+                        <span style={{fontSize:'11px',color:'var(--text-muted)'}}>Divider line color</span>
+                    </div>
+                    <label style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'11px',color:'var(--text-muted)',cursor:'pointer'}}>
+                      <input
+                        type="checkbox"
+                        checked={slide.dividerEnabled ?? true}
+                        onChange={e => handleChange('dividerEnabled', e.target.checked)}
+                      />
+                      <span>Show divider line</span>
+                    </label>
                 </div>
             </div>
-      <div className="ctrl-section">
-        <button
-          className="regen-btn"
-          onClick={applyBgToAll}
-          title="Apply this background to all slides"
-          style={{ width: "100%", justifyContent: "center" }}
-        >
-          Apply background to all
-        </button>
-      </div>
+            <div className="ctrl-section">
+              <button
+                className="regen-btn"
+                onClick={applyBgToAll}
+                title="Apply this background to all slides"
+                style={{ width: "100%", justifyContent: "center" }}
+              >
+                Apply background to all
+              </button>
+            </div>
+            <div className="ctrl-section">
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "11px",
+                  color: "var(--text-muted)",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isBgMaster}
+                  onChange={(e) =>
+                    setBgStyleMasterId(e.target.checked ? slide.id : null)
+                  }
+                />
+                <span>Always apply this background</span>
+              </label>
+            </div>
         </div>
     );
 }

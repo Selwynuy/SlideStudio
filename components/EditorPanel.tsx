@@ -1,7 +1,6 @@
 "use client";
 
 import { Slide } from "@/types/slide";
-import { useState } from "react";
 import InputTab from "./InputTab";
 import SlideTab from "./SlideTab";
 import BgTab from "./BgTab";
@@ -34,6 +33,12 @@ interface EditorPanelProps {
   exportAll: () => void;
   applyTextStyleToAll: () => void;
   applyBgToAll: () => void;
+  activeTab: "input" | "slide" | "bg" | "export";
+  setActiveTab: (tab: "input" | "slide" | "bg" | "export") => void;
+  textStyleMasterId: string | null;
+  setTextStyleMasterId: (id: string | null) => void;
+  bgStyleMasterId: string | null;
+  setBgStyleMasterId: (id: string | null) => void;
 }
 
 export default function EditorPanel({
@@ -56,9 +61,13 @@ export default function EditorPanel({
   exportAll,
   applyTextStyleToAll,
   applyBgToAll,
+  activeTab,
+  setActiveTab,
+  textStyleMasterId,
+  setTextStyleMasterId,
+  bgStyleMasterId,
+  setBgStyleMasterId,
 }: EditorPanelProps) {
-  const [activeTab, setActiveTab] = useState("input");
-
   return (
     <div className="panel-right">
       <div className="tabs">
@@ -104,19 +113,27 @@ export default function EditorPanel({
         />
       )}
       {activeTab === "slide" && (
-        <SlideTab
-          slide={slide}
-          updateSlide={updateSlide}
-          regenField={regenField}
-          applyTextStyleToAll={applyTextStyleToAll}
-        />
+        <div className="tab-pane active" id="tab-slide">
+          <SlideTab
+            slide={slide}
+            updateSlide={updateSlide}
+            regenField={regenField}
+            applyTextStyleToAll={applyTextStyleToAll}
+            textStyleMasterId={textStyleMasterId}
+            setTextStyleMasterId={setTextStyleMasterId}
+          />
+        </div>
       )}
       {activeTab === "bg" && (
-        <BgTab
-          slide={slide}
-          updateSlide={updateSlide}
-          applyBgToAll={applyBgToAll}
-        />
+        <div className="tab-pane active" id="tab-bg">
+          <BgTab
+            slide={slide}
+            updateSlide={updateSlide}
+            applyBgToAll={applyBgToAll}
+            bgStyleMasterId={bgStyleMasterId}
+            setBgStyleMasterId={setBgStyleMasterId}
+          />
+        </div>
       )}
       {activeTab === "export" && (
         <ExportTab

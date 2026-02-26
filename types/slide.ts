@@ -14,4 +14,6 @@ export interface Slide {
   overlayOpacity: number;
   accentColor: string;
   eyebrow?: string;
+  /** Whether the divider line is shown / colored */
+  dividerEnabled?: boolean;
 }

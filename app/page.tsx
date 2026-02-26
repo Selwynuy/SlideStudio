@@ -16,6 +16,7 @@ import RenderedSlide from "@/components/RenderedSlide";
 export default function Home() {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<"input" | "slide" | "bg" | "export">("input");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Generating slides…");
   const [sourceText, setSourceText] = useState("");
@@ -34,6 +35,8 @@ export default function Home() {
   const [exportFormat, setExportFormat] = useState<'png' | 'jpg'>('png');
   const [brandingEnabled, setBrandingEnabled] = useState(false);
   const [pendingDeleteIdx, setPendingDeleteIdx] = useState<number | null>(null);
+  const [textStyleMasterId, setTextStyleMasterId] = useState<string | null>(null);
+  const [bgStyleMasterId, setBgStyleMasterId] = useState<string | null>(null);
   const renderRef = React.useRef<HTMLDivElement>(null);
 
   // Generation Settings
@@ -103,19 +106,27 @@ export default function Home() {
   }
 
   function addSlide() {
-    const newSlide: Slide = {
+    const textMaster = textStyleMasterId
+      ? slides.find((s) => s.id === textStyleMasterId)
+      : null;
+    const bgMaster = bgStyleMasterId
+      ? slides.find((s) => s.id === bgStyleMasterId)
+      : null;
+
+    let newSlide: Slide = {
       id: Date.now().toString(),
       type: "normal",
       title: "New Slide",
       description: "Tap to edit this description.",
-      align: "center",
-      bgPresetIdx: 0,
-      bgImage: null,
-      overlayColor: "#000000",
-      overlayOpacity: 55,
-      accentColor: "#00d4ff",
-      titleColor: "#ffffff",
-      descColor: "#d4d4d4",
+      align: textMaster?.align ?? "center",
+      bgPresetIdx: bgMaster?.bgPresetIdx ?? 0,
+      bgImage: bgMaster?.bgImage ?? null,
+      overlayColor: bgMaster?.overlayColor ?? "#000000",
+      overlayOpacity: bgMaster?.overlayOpacity ?? 55,
+      accentColor: bgMaster?.accentColor ?? "#00d4ff",
+      titleColor: textMaster?.titleColor ?? "#ffffff",
+      descColor: textMaster?.descColor ?? "#d4d4d4",
+      dividerEnabled: bgMaster?.dividerEnabled ?? true,
     };
     const newSlides = [...slides, newSlide];
     setSlides(newSlides);
@@ -142,11 +153,20 @@ export default function Home() {
     if (pendingDeleteIdx === null) return;
 
     const index = pendingDeleteIdx;
+    const deletedId = slides[index]?.id;
     const newSlides = slides.filter((_, i) => i !== index);
     setSlides(newSlides);
     setActiveIdx(
       activeIdx === index ? Math.min(index, newSlides.length - 1) : activeIdx
     );
+    if (deletedId) {
+      if (textStyleMasterId === deletedId) {
+        setTextStyleMasterId(null);
+      }
+      if (bgStyleMasterId === deletedId) {
+        setBgStyleMasterId(null);
+      }
+    }
     setPendingDeleteIdx(null);
     showToast("Slide deleted", "err");
   }
@@ -158,8 +178,40 @@ export default function Home() {
   function updateSlide(updated: Slide) {
     if (activeIdx === null) return;
 
-    const newSlides = [...slides];
+    let newSlides = [...slides];
     newSlides[activeIdx] = updated;
+
+    // If this slide is the text style master, propagate text styles to all
+    if (textStyleMasterId && updated.id === textStyleMasterId) {
+      newSlides = newSlides.map((s) =>
+        s.id === updated.id
+          ? updated
+          : {
+              ...s,
+              align: updated.align,
+              titleColor: updated.titleColor,
+              descColor: updated.descColor,
+            }
+      );
+    }
+
+    // If this slide is the background style master, propagate bg styles to all
+    if (bgStyleMasterId && updated.id === bgStyleMasterId) {
+      newSlides = newSlides.map((s) =>
+        s.id === updated.id
+          ? updated
+          : {
+              ...s,
+              bgPresetIdx: updated.bgPresetIdx,
+              bgImage: updated.bgImage,
+              overlayColor: updated.overlayColor,
+              overlayOpacity: updated.overlayOpacity,
+              accentColor: updated.accentColor,
+              dividerEnabled: updated.dividerEnabled ?? true,
+            }
+      );
+    }
+
     setSlides(newSlides);
   }
 
@@ -190,6 +242,7 @@ export default function Home() {
         overlayColor: source.overlayColor,
         overlayOpacity: source.overlayOpacity,
         accentColor: source.accentColor,
+        dividerEnabled: source.dividerEnabled ?? true,
       }))
     );
     showToast("Applied background to all slides", "ok");
@@ -262,6 +315,7 @@ Rules:
           accentColor: "#00d4ff",
           titleColor: "#ffffff",
           descColor: "#d4d4d4",
+          dividerEnabled: true,
         }));
 
         if (isBatch) {
@@ -403,7 +457,10 @@ Return: {"description":"..."}`;
         <SlideList
           slides={slides}
           activeIdx={activeIdx}
-          setActiveIdx={setActiveIdx}
+          setActiveIdx={(idx) => {
+            setActiveIdx(idx);
+            setActiveTab("slide");
+          }}
           onAddSlide={addSlide}
           onMoveSlide={moveSlide}
           onDeleteSlide={deleteSlide}
@@ -437,6 +494,12 @@ Return: {"description":"..."}`;
           exportAll={() => exportAll("png", false)}
           applyTextStyleToAll={applyTextStyleToAll}
           applyBgToAll={applyBgToAll}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          textStyleMasterId={textStyleMasterId}
+          setTextStyleMasterId={setTextStyleMasterId}
+          bgStyleMasterId={bgStyleMasterId}
+          setBgStyleMasterId={setBgStyleMasterId}
         />
       </main>
     </>

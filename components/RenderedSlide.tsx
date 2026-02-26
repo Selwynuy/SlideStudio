@@ -48,10 +48,12 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
             <div className="sld-title" style={{ color: slide.titleColor, fontSize: '96px', lineHeight: '1.1' }}>
               {slide.title}
             </div>
-            <div
-              className="sld-divider"
-              style={{ background: slide.accentColor }}
-            ></div>
+            {slide.dividerEnabled ?? true ? (
+              <div
+                className="sld-divider"
+                style={{ background: slide.accentColor }}
+              ></div>
+            ) : null}
             <div className="sld-desc" style={{ color: slide.descColor, fontSize: '46px', lineHeight: '1.6' }}>
               {slide.description}
             </div>
