@@ -1,15 +1,21 @@
 "use client";
 
 import { Slide } from "@/types/slide";
-import React from "react";
+
 
 interface SlideTabProps {
   slide: Slide | null;
   updateSlide: (updated: Slide) => void;
   regenField: (field: "title" | "description" | "both") => Promise<void>;
+  applyTextStyleToAll: () => void;
 }
 
-export default function SlideTab({ slide, updateSlide, regenField }: SlideTabProps) {
+export default function SlideTab({
+  slide,
+  updateSlide,
+  regenField,
+  applyTextStyleToAll,
+}: SlideTabProps) {
   if (!slide) {
     return (
       <div id="slideEditorEmpty" className="empty-right">
@@ -57,7 +63,7 @@ export default function SlideTab({ slide, updateSlide, regenField }: SlideTabPro
         </div>
         {/* Removed the explanatory text as requested */}
       </div>
-      
+
       <div className="slide-editor-field">
         <div className="sef-label">
           <span>TEXT ALIGNMENT</span>
@@ -74,7 +80,7 @@ export default function SlideTab({ slide, updateSlide, regenField }: SlideTabPro
           </button>
         </div>
       </div>
-      
+
       {/* Hook-specific eyebrow field - FIXED: Now properly displays and editable */}
       {isHook && (
         <div className="slide-editor-field">
@@ -154,7 +160,7 @@ export default function SlideTab({ slide, updateSlide, regenField }: SlideTabPro
           </div>
         </div>
       </div>
-      
+
       {/* Description field - FIXED: Now editable for normal slides, shows preview for hooks */}
       <div className="slide-editor-field">
         <div className="sef-label">
@@ -196,7 +202,18 @@ export default function SlideTab({ slide, updateSlide, regenField }: SlideTabPro
           </div>
         </div>
       </div>
-      
+
+      {/* Apply text styles to all slides */}
+      <div className="regen-strip" style={{ marginTop: "4px" }}>
+        <button
+          className="regen-btn"
+          onClick={applyTextStyleToAll}
+          title="Apply alignment and text colors to all slides"
+        >
+          Apply text styles to all
+        </button>
+      </div>
+
       {/* Regenerate buttons */}
       <div className="regen-strip">
         <button className="regen-btn" onClick={() => regenField('title')} style={isHook ? {borderColor:'rgba(255,107,53,0.3)'} : {}}>

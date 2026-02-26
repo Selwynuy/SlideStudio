@@ -162,6 +162,38 @@ export default function Home() {
     setSlides(newSlides);
   }
 
+  function applyTextStyleToAll() {
+    if (activeIdx === null || slides.length === 0) return;
+
+    const source = slides[activeIdx];
+    setSlides(
+      slides.map((s) => ({
+        ...s,
+        align: source.align,
+        titleColor: source.titleColor,
+        descColor: source.descColor,
+      }))
+    );
+    showToast("Applied text styles to all slides", "ok");
+  }
+
+  function applyBgToAll() {
+    if (activeIdx === null || slides.length === 0) return;
+
+    const source = slides[activeIdx];
+    setSlides(
+      slides.map((s) => ({
+        ...s,
+        bgPresetIdx: source.bgPresetIdx,
+        bgImage: source.bgImage,
+        overlayColor: source.overlayColor,
+        overlayOpacity: source.overlayOpacity,
+        accentColor: source.accentColor,
+      }))
+    );
+    showToast("Applied background to all slides", "ok");
+  }
+
   function prevSlide() {
     if (activeIdx !== null && activeIdx > 0) {
       setActiveIdx(activeIdx - 1);
@@ -393,7 +425,9 @@ Return: {"description":"..."}`;
           batchOffset={batchOffset}
           slides={slides}
           exportJson={exportJson}
-          exportAll={() => exportAll('png', false)}
+          exportAll={() => exportAll("png", false)}
+          applyTextStyleToAll={applyTextStyleToAll}
+          applyBgToAll={applyBgToAll}
         />
       </main>
     </>

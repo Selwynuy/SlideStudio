@@ -8,9 +8,10 @@ import { BG_PRESETS } from "@/lib/presets";
 interface BgTabProps {
   slide: Slide | null;
   updateSlide: (updated: Slide) => void;
+  applyBgToAll: () => void;
 }
 
-export default function BgTab({ slide, updateSlide }: BgTabProps) {
+export default function BgTab({ slide, updateSlide, applyBgToAll }: BgTabProps) {
     if (!slide) {
         return (
             <div id="bgEditorEmpty" className="empty-right">
@@ -89,6 +90,16 @@ export default function BgTab({ slide, updateSlide }: BgTabProps) {
                     <span style={{fontSize:'11px',color:'var(--text-muted)'}}>Divider line color</span>
                 </div>
             </div>
+      <div className="ctrl-section">
+        <button
+          className="regen-btn"
+          onClick={applyBgToAll}
+          title="Apply this background to all slides"
+          style={{ width: "100%", justifyContent: "center" }}
+        >
+          Apply background to all
+        </button>
+      </div>
         </div>
     );
 }

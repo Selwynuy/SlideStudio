@@ -32,6 +32,8 @@ interface EditorPanelProps {
   slides: Slide[];
   exportJson: () => void;
   exportAll: () => void;
+  applyTextStyleToAll: () => void;
+  applyBgToAll: () => void;
 }
 
 export default function EditorPanel({
@@ -52,6 +54,8 @@ export default function EditorPanel({
   slides,
   exportJson,
   exportAll,
+  applyTextStyleToAll,
+  applyBgToAll,
 }: EditorPanelProps) {
   const [activeTab, setActiveTab] = useState("input");
 
@@ -104,9 +108,16 @@ export default function EditorPanel({
           slide={slide}
           updateSlide={updateSlide}
           regenField={regenField}
+          applyTextStyleToAll={applyTextStyleToAll}
         />
       )}
-      {activeTab === "bg" && <BgTab slide={slide} updateSlide={updateSlide} />}
+      {activeTab === "bg" && (
+        <BgTab
+          slide={slide}
+          updateSlide={updateSlide}
+          applyBgToAll={applyBgToAll}
+        />
+      )}
       {activeTab === "export" && (
         <ExportTab
           slides={slides}
