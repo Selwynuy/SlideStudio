@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Slide } from "@/types/slide";
 import Header from "@/components/Header";
 import SlideList from "@/components/SlideList";
@@ -12,15 +13,35 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { callGemini } from "@/lib/gemini";
 import html2canvas from "html2canvas";
 import RenderedSlide from "@/components/RenderedSlide";
+import {
+  loadSlideshow,
+  createSlideshow,
+  saveSlides,
+  slidesFromRecords,
+  type Slideshow,
+} from "@/lib/slideshows";
+import { useUser } from "@/contexts/UserContext";
+import { useProjects } from "@/contexts/ProjectsContext";
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, isLoading: isUserLoading } = useUser();
+  const { refreshProjects } = useProjects();
   const [slides, setSlides] = useState<Slide[]>([]);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<"input" | "slide" | "bg" | "export">("input");
+  const [activeTab, setActiveTab] = useState<"input" | "slide" | "bg" | "export" | "slides">("input");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Generating slides…");
   const [sourceText, setSourceText] = useState("");
   const [batchOffset, setBatchOffset] = useState(0);
+  
+  // Database state
+  const [currentSlideshowId, setCurrentSlideshowId] = useState<string | null>(null);
+  const [isLoadingSlideshow, setIsLoadingSlideshow] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error" | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Toast state
   const [toastMessage, setToastMessage] = useState("");
@@ -37,7 +58,143 @@ export default function Home() {
   const [pendingDeleteIdx, setPendingDeleteIdx] = useState<number | null>(null);
   const [textStyleMasterId, setTextStyleMasterId] = useState<string | null>(null);
   const [bgStyleMasterId, setBgStyleMasterId] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(true);
   const renderRef = React.useRef<HTMLDivElement>(null);
+
+  // Track if we've already initialized to prevent double-loading
+  const hasInitialized = useRef(false);
+
+  // Check authentication and load slideshow on mount
+  useEffect(() => {
+    if (isUserLoading) return;
+    
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    
+    // Only initialize once per user session
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+    
+    // Check for slideshow ID in URL
+    const slideshowId = searchParams.get('id');
+    if (slideshowId) {
+      loadSlideshowFromDb(slideshowId);
+    } else {
+      // If no slideshow ID, create a new one
+      createNewSlideshow();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isUserLoading]);
+
+  // Reset initialization flag when user changes
+  useEffect(() => {
+    if (!user) {
+      hasInitialized.current = false;
+    }
+  }, [user]);
+
+  // Auto-save slides when they change
+  useEffect(() => {
+    if (!currentSlideshowId) return;
+    
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Don't auto-save on initial load
+    if (slides.length === 0) return;
+    
+    // Set save status to saving
+    setSaveStatus("saving");
+    
+    // Debounce save by 2 seconds
+    saveTimeoutRef.current = setTimeout(async () => {
+      await saveSlidesToDb();
+    }, 2000);
+    
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slides, currentSlideshowId]);
+
+  // Close editor on Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && editorOpen) {
+        setEditorOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [editorOpen]);
+
+  // Load slideshow from database
+  async function loadSlideshowFromDb(id: string) {
+    setIsLoadingSlideshow(true);
+    try {
+      const data = await loadSlideshow(id);
+      setCurrentSlideshowId(data.id);
+      const loadedSlides = slidesFromRecords(data.slides);
+      setSlides(loadedSlides);
+      if (loadedSlides.length > 0) {
+        setActiveIdx(0);
+      }
+      showToast("Slideshow loaded", "ok");
+    } catch (error: any) {
+      console.error("Failed to load slideshow:", error);
+      showToast(error.message || "Failed to load slideshow", "err");
+    } finally {
+      setIsLoadingSlideshow(false);
+    }
+  }
+
+  // Save slides to database
+  async function saveSlidesToDb() {
+    if (!currentSlideshowId) return;
+    
+    setIsSaving(true);
+    try {
+      await saveSlides(currentSlideshowId, slides);
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus(null), 2000);
+    } catch (error: any) {
+      console.error("Failed to save slides:", error);
+      setSaveStatus("error");
+      showToast("Failed to save", "err");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  // Create new slideshow
+  async function createNewSlideshow() {
+    try {
+      const slideshow = await createSlideshow("Untitled Slideshow", {
+        tone,
+        complexity,
+        maxSlides,
+        focus,
+        hook,
+      });
+      setCurrentSlideshowId(slideshow.id);
+      setSlides([]);
+      setActiveIdx(null);
+      // Update URL without reload
+      window.history.replaceState({}, '', `/?id=${slideshow.id}`);
+      // Refresh projects list to include the new one
+      await refreshProjects();
+      showToast("New slideshow created", "ok");
+    } catch (error: any) {
+      console.error("Failed to create slideshow:", error);
+      showToast(error.message || "Failed to create slideshow", "err");
+    }
+  }
 
   // Generation Settings
   const [rawText, setRawText] = useState("");
@@ -463,19 +620,11 @@ Return: {"description":"..."}`;
 
       <Header
         slideCount={slides.length}
-        onNewSession={() => {
-          setSlides([]);
-          setActiveIdx(null);
-        }}
-        slides={slides}
-        activeIdx={activeIdx}
-        setActiveIdx={(idx) => {
-          setActiveIdx(idx);
-          setActiveTab("slide");
-        }}
-        onAddSlide={addSlide}
-        onMoveSlide={moveSlide}
-        onDeleteSlide={deleteSlide}
+        onNewSession={createNewSlideshow}
+        saveStatus={saveStatus}
+        isLoadingSlideshow={isLoadingSlideshow}
+        currentSlideshowId={currentSlideshowId}
+        onSelectProject={loadSlideshowFromDb}
       />
 
       <main className="workspace">
@@ -497,6 +646,8 @@ Return: {"description":"..."}`;
           onNext={nextSlide}
           slideIndex={activeIdx !== null ? activeIdx : -1}
           totalSlides={slides.length}
+          editorOpen={editorOpen}
+          setEditorOpen={setEditorOpen}
         />
 
         <EditorPanel
@@ -515,6 +666,14 @@ Return: {"description":"..."}`;
           sourceText={sourceText}
           batchOffset={batchOffset}
           slides={slides}
+          activeIdx={activeIdx}
+          setActiveIdx={(idx) => {
+            setActiveIdx(idx);
+            setActiveTab("slide");
+          }}
+          onAddSlide={addSlide}
+          onMoveSlide={moveSlide}
+          onDeleteSlide={deleteSlide}
           exportJson={exportJson}
           exportAll={() => exportAll("png", false)}
           applyTextStyleToAll={applyTextStyleToAll}
@@ -525,6 +684,8 @@ Return: {"description":"..."}`;
           setTextStyleMasterId={setTextStyleMasterId}
           bgStyleMasterId={bgStyleMasterId}
           setBgStyleMasterId={setBgStyleMasterId}
+          editorOpen={editorOpen}
+          setEditorOpen={setEditorOpen}
         />
       </main>
     </>

@@ -1,10 +1,12 @@
 "use client";
 
 import { Slide } from "@/types/slide";
+import { useEffect, useState } from "react";
 import InputTab from "./InputTab";
 import SlideTab from "./SlideTab";
 import BgTab from "./BgTab";
 import ExportTab from "./ExportTab";
+import SlidesTab from "./SlidesTab";
 
 interface EditorPanelProps {
   slide: Slide | null;
@@ -29,16 +31,23 @@ interface EditorPanelProps {
   sourceText: string;
   batchOffset: number;
   slides: Slide[];
+  activeIdx: number | null;
+  setActiveIdx: (idx: number) => void;
+  onAddSlide: () => void;
+  onMoveSlide: (index: number, direction: "up" | "down") => void;
+  onDeleteSlide: (index: number) => void;
   exportJson: () => void;
   exportAll: () => void;
   applyTextStyleToAll: () => void;
   applyBgToAll: () => void;
-  activeTab: "input" | "slide" | "bg" | "export";
-  setActiveTab: (tab: "input" | "slide" | "bg" | "export") => void;
+  activeTab: "input" | "slide" | "bg" | "export" | "slides";
+  setActiveTab: (tab: "input" | "slide" | "bg" | "export" | "slides") => void;
   textStyleMasterId: string | null;
   setTextStyleMasterId: (id: string | null) => void;
   bgStyleMasterId: string | null;
   setBgStyleMasterId: (id: string | null) => void;
+  editorOpen: boolean;
+  setEditorOpen: (open: boolean) => void;
 }
 
 export default function EditorPanel({
@@ -57,6 +66,11 @@ export default function EditorPanel({
   sourceText,
   batchOffset,
   slides,
+  activeIdx,
+  setActiveIdx,
+  onAddSlide,
+  onMoveSlide,
+  onDeleteSlide,
   exportJson,
   exportAll,
   applyTextStyleToAll,
@@ -67,16 +81,55 @@ export default function EditorPanel({
   setTextStyleMasterId,
   bgStyleMasterId,
   setBgStyleMasterId,
+  editorOpen,
+  setEditorOpen,
 }: EditorPanelProps) {
-  return (
-    <div className="panel-right">
-      <div className="tabs">
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTabletOrSmaller, setIsTabletOrSmaller] = useState(false);
+
+  useEffect(() => {
+    const check = () => {
+      setIsMobile(window.innerWidth <= 768);
+      setIsTabletOrSmaller(window.innerWidth <= 1024);
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const panelContent = (
+    <>
+      {isMobile && editorOpen && (
+        <div
+          className="editor-overlay-backdrop"
+          onClick={() => setEditorOpen(false)}
+        />
+      )}
+      <div className={`${isMobile ? "editor-overlay" : ""} panel-right ${isMobile && editorOpen ? "open" : ""}`} style={isTabletOrSmaller && !isMobile ? { display: 'flex', flexDirection: 'column' } : {}}>
+        {isMobile && (
+          <button
+            className="editor-overlay-close"
+            onClick={() => setEditorOpen(false)}
+            aria-label="Close editor"
+          >
+            ×
+          </button>
+        )}
+      <div className={`tabs${isTabletOrSmaller ? " has-slides-tab" : ""}`}>
         <div
           className={`tab ${activeTab === "input" ? "active" : ""}`}
           onClick={() => setActiveTab("input")}
         >
           INPUT
         </div>
+        {isTabletOrSmaller && (
+          <div
+            className={`tab ${activeTab === "slides" ? "active" : ""}`}
+            onClick={() => setActiveTab("slides")}
+          >
+            SLIDES
+          </div>
+        )}
         <div
           className={`tab ${activeTab === "slide" ? "active" : ""}`}
           onClick={() => setActiveTab("slide")}
@@ -142,6 +195,19 @@ export default function EditorPanel({
           exportAll={exportAll}
         />
       )}
-    </div>
+      {activeTab === "slides" && isTabletOrSmaller && (
+        <SlidesTab
+          slides={slides}
+          activeIdx={activeIdx}
+          setActiveIdx={setActiveIdx}
+          onAddSlide={onAddSlide}
+          onMoveSlide={onMoveSlide}
+          onDeleteSlide={onDeleteSlide}
+        />
+      )}
+      </div>
+    </>
   );
+
+  return panelContent;
 }

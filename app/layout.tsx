@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { UserProvider } from "@/contexts/UserContext";
+import { ProjectsProvider } from "@/contexts/ProjectsContext";
 
 const bebasNeue = Bebas_Neue({
   subsets: ["latin"],
@@ -29,11 +31,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body
         className={`${bebasNeue.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        {children}
+        <UserProvider>
+          <ProjectsProvider>
+            {children}
+          </ProjectsProvider>
+        </UserProvider>
       </body>
     </html>
   );

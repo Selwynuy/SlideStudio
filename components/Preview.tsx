@@ -13,9 +13,11 @@ interface PreviewProps {
   onNext: () => void;
   slideIndex: number;
   totalSlides: number;
+  editorOpen: boolean;
+  setEditorOpen: (open: boolean) => void;
 }
 
-export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides }: PreviewProps) {
+export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides, editorOpen, setEditorOpen }: PreviewProps) {
   const [showTikTokUI, setShowTikTokUI] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
@@ -90,34 +92,34 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
 
       setScale(nextScale);
 
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7244/ingest/767ff8dc-bed7-43dd-ad0d-9119824793f1",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: `log_${Date.now()}`,
-            runId,
-            hypothesisId,
-            location: "components/Preview.tsx:updateScale",
-            message: "Updated phone-frame scale",
-            data: {
-              containerWidth,
-              containerHeight,
-              isMobileWidth,
-              sideMargin,
-              verticalMargin,
-              widthScale,
-              heightScale,
-              navHeight,
-              availableHeight,
-              nextScale,
-            },
-            timestamp: Date.now(),
-          }),
-        }
-      ).catch(() => {});
+      // #region agent log (disabled - debug endpoint not available)
+      // fetch(
+      //   "http://127.0.0.1:7244/ingest/767ff8dc-bed7-43dd-ad0d-9119824793f1",
+      //   {
+      //     method: "POST",
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify({
+      //       id: `log_${Date.now()}`,
+      //       runId,
+      //       hypothesisId,
+      //       location: "components/Preview.tsx:updateScale",
+      //       message: "Updated phone-frame scale",
+      //       data: {
+      //         containerWidth,
+      //         containerHeight,
+      //         isMobileWidth,
+      //         sideMargin,
+      //         verticalMargin,
+      //         widthScale,
+      //         heightScale,
+      //         navHeight,
+      //         availableHeight,
+      //         nextScale,
+      //       },
+      //       timestamp: Date.now(),
+      //     }),
+      //   }
+      // ).catch(() => {});
       // #endregion
     };
 
@@ -169,6 +171,18 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
             />
             Show TikTok UI
           </label>
+          <button
+            className="btn btn-ghost btn-xs editor-toggle-btn"
+            onClick={() => setEditorOpen(!editorOpen)}
+            title={editorOpen ? "Hide Editor" : "Show Editor"}
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: "10px",
+              letterSpacing: "0.5px",
+            }}
+          >
+            {editorOpen ? "◄ Editor" : "► Editor"}
+          </button>
         </div>
       </div>
 

@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+/* ---break---
+  */
+@custom-variant dark (&:is(.dark *));
 
 :root {
   /* New base palette:
@@ -8,7 +13,7 @@
   --bg2: #44444e;
   --bg3: #4c4a55;
   --bg4: #715a5a;
-  --border: #44444e;
+  --border: oklch(0.922 0 0);
   --border2: #715a5a;
   --cyan: #00c4ef;
   --cyan-dim: rgba(0, 196, 239, 0.1);
@@ -20,9 +25,45 @@
   --green: #00e87a;
   --amber: #ffb800;
   --hook-color: #ff6b35;
+  --radius: 0.625rem;
+  --background: #37353e;
+  --foreground: #d3dad9;
+  --card: #44444e;
+  --card-foreground: #d3dad9;
+  --popover: #44444e;
+  --popover-foreground: #d3dad9;
+  --primary: #00c4ef;
+  --primary-foreground: #000;
+  --secondary: #4c4a55;
+  --secondary-foreground: #d3dad9;
+  --muted: #4c4a55;
+  --muted-foreground: #b4b8c0;
+  --accent: #4c4a55;
+  --accent-foreground: #d3dad9;
+  --destructive: #ff4444;
+  --input: #4c4a55;
+  --ring: #00c4ef;
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { 
+  margin: 0; 
+  padding: 0; 
+  height: 100%; 
+  overflow: hidden; 
+}
 body {
   background: var(--bg);
   color: var(--text);
@@ -266,6 +307,7 @@ header {
   flex: 1;
   overflow: hidden;
   min-height: 0;
+  position: relative;
 }
 
 /* ─── LEFT: SLIDE LIST ───────────────────────── */
@@ -333,6 +375,23 @@ header {
   font-size: 8px; padding: 1px 5px; border-radius: 3px;
   background: rgba(255,107,53,0.15); color: var(--hook-color);
   font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;
+}
+
+/* Slide list when shown inside the editor panel SLIDES tab */
+.slides-tab-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.slides-tab-pane .panel-left {
+  display: flex !important;
+  flex: 1;
+  border: none;
+  background: transparent;
+  min-height: 0;
 }
 
 /* Slide list when shown inside the header drawer */
@@ -547,12 +606,119 @@ header {
   min-width: 60px; text-align: center;
 }
 
-/* ─── RIGHT: CONTROLS ────────────────────────── */
+/* ─── RIGHT: CONTROLS (Now as Overlay) ────────────────────────── */
+.editor-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.3s ease;
+}
+
+.editor-overlay {
+  position: fixed;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg2);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s ease;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+  overflow: visible;
+}
+
+.editor-overlay-close {
+  position: absolute;
+  top: 0;
+  right: 16px;
+  transform: translateY(calc(-80% + 1px));
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.15s;
+  z-index: 101;
+  line-height: 1;
+}
+
+.editor-overlay-close:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+/* Desktop & Tablet: EditorPanel stays in grid (not overlay) */
+@media (min-width: 769px) {
+  .editor-overlay-backdrop {
+    display: none;
+  }
+
+  .editor-overlay {
+    position: static;
+    transform: none !important;
+    box-shadow: none;
+    border-left: 1px solid var(--border);
+    width: auto;
+    height: auto;
+  }
+
+  .editor-overlay-close {
+    display: none;
+  }
+}
+
+/* Mobile: bottom sheet overlay */
+@media (max-width: 768px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-toggle-btn {
+    display: inline-flex;
+  }
+
+  .editor-overlay {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40vh;
+    border-radius: 16px 16px 0 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    transform: translateY(100%);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+  }
+
+  .editor-overlay.open {
+    transform: translateY(0);
+  }
+
+}
+
+/* Hide toggle button on desktop/tablet */
+@media (min-width: 769px) {
+  .editor-toggle-btn {
+    display: none;
+  }
+}
+
 .panel-right {
   border-left: 1px solid var(--border);
   display: flex; flex-direction: column;
   overflow: hidden; background: var(--bg2);
   min-height: 0;
+  flex: 1;
 }
 .tabs {
   display: flex; border-bottom: 1px solid var(--border);
@@ -568,6 +734,16 @@ header {
 .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
 .tab-pane { display: none; flex: 1; overflow-y: auto; }
 .tab-pane.active { display: flex; flex-direction: column; }
+
+/* 5-tab layout on tablet and mobile */
+@media (max-width: 1024px) {
+  .tabs.has-slides-tab .tab {
+    flex: 1;
+    font-size: 9px;
+    padding: 8px 2px;
+    letter-spacing: 0.5px;
+  }
+}
 
 /* Scrollable editors for Slide/BG tabs */
 #slideEditorContent,
@@ -781,8 +957,8 @@ input[type=color] {
 
 /* ─── RESPONSIVE LAYOUTS ───────────────────────── */
 
-/* Tablet and small desktop: stack SlideList below, keep Preview + Editor side by side */
-@media (max-width: 1199px) {
+/* Tablet: stack SlideList below, keep Preview + Editor side by side */
+@media (max-width: 1024px)   {
   .workspace {
     grid-template-columns: minmax(260px, 1.1fr) minmax(320px, 1.2fr);
     grid-auto-rows: minmax(0, auto);
@@ -831,19 +1007,13 @@ input[type=color] {
   }
 
   .panel-left,
-  .panel-center,
-  .panel-right {
+  .panel-center {
     width: 100%;
   }
 
   .panel-left {
     border-right: none;
     border-bottom: 1px solid var(--border);
-  }
-
-  .panel-right {
-    border-left: none;
-    border-top: 1px solid var(--border);
   }
 
   .preview-toolbar {
@@ -882,5 +1052,99 @@ input[type=color] {
 
   .tab {
     padding: 8px 2px;
+  }
+}
+/* ---break---
+  */
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+/* ---break---
+  */
+.dark {
+  --background: #37353e;
+  --foreground: #d3dad9;
+  --card: #44444e;
+  --card-foreground: #d3dad9;
+  --popover: #44444e;
+  --popover-foreground: #d3dad9;
+  --primary: #00c4ef;
+  --primary-foreground: #000;
+  --secondary: #4c4a55;
+  --secondary-foreground: #d3dad9;
+  --muted: #4c4a55;
+  --muted-foreground: #b4b8c0;
+  --accent: #4c4a55;
+  --accent-foreground: #d3dad9;
+  --destructive: #ff4444;
+  --border: #44444e;
+  --input: #4c4a55;
+  --ring: #00c4ef;
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: #44444e;
+  --sidebar-foreground: #d3dad9;
+  --sidebar-primary: #00c4ef;
+  --sidebar-primary-foreground: #000;
+  --sidebar-accent: #4c4a55;
+  --sidebar-accent-foreground: #d3dad9;
+  --sidebar-border: #44444e;
+  --sidebar-ring: #00c4ef;
+}
+/* ---break---
+  */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background: var(--bg) !important;
+    color: var(--text) !important;
+  }
+  [data-slot="card"] {
+    background: var(--card) !important;
+    color: var(--card-foreground) !important;
+    border-color: var(--border) !important;
   }
 }

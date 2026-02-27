@@ -33,9 +33,6 @@ export default function SlideList({
         >
           SLIDES
         </span>
-        <button className="btn btn-ghost btn-xs" onClick={onAddSlide}>
-          + Add
-        </button>
       </div>
       <div className="slide-list-scroll" id="slideListScroll">
         {slides.map((s, i) => (
