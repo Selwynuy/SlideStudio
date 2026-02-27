@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Slide } from "@/types/slide";
 import Header from "@/components/Header";
@@ -23,7 +23,7 @@ import {
 import { useUser } from "@/contexts/UserContext";
 import { useProjects } from "@/contexts/ProjectsContext";
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading: isUserLoading } = useUser();
@@ -689,5 +689,13 @@ Return: {"description":"..."}`;
         />
       </main>
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
