@@ -78,6 +78,22 @@ export default function BgTab({
                     </div>
                     <input type="file" accept="image/*" id="bgUploadInput" onChange={handleBgUpload} />
                 </label>
+                {slide.bgImage && (
+                    <div style={{ marginTop: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                            <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Image Opacity</label>
+                            <span style={{fontFamily:'"JetBrains Mono",monospace',fontSize:'10px',color:'var(--text-muted)'}}>{slide.imageOpacity ?? 100}%</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            min="0" 
+                            max="100" 
+                            value={slide.imageOpacity ?? 100} 
+                            onInput={e => handleChange('imageOpacity', parseInt(e.currentTarget.value))} 
+                            style={{width:'100%'}}
+                        />
+                    </div>
+                )}
             </div>
             <div className="ctrl-section">
                 <div className="ctrl-label">Overlay (Readability) <span></span></div>

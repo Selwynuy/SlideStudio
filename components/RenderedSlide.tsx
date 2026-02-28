@@ -11,7 +11,7 @@ interface RenderedSlideProps {
 const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
   ({ slide }, ref) => {
     const bgStyle = slide.bgImage
-      ? { backgroundImage: `url(${slide.bgImage})` }
+      ? { backgroundImage: `url(${slide.bgImage})`, opacity: (slide.imageOpacity ?? 100) / 100 }
       : { background: BG_PRESETS[slide.bgPresetIdx]?.css || "#111" };
 
     const overlayStyle = {

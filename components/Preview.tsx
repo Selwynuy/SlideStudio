@@ -26,7 +26,7 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
 
   const bgStyle = slide
     ? slide.bgImage
-      ? { backgroundImage: `url(${slide.bgImage})` }
+      ? { backgroundImage: `url(${slide.bgImage})`, opacity: (slide.imageOpacity ?? 100) / 100 }
       : { background: BG_PRESETS[slide.bgPresetIdx]?.css || "var(--bg3)" }
     : { background: "var(--bg3)" };
 

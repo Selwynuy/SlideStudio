@@ -18,6 +18,8 @@ export interface Slide {
   align: "left" | "center" | "right";
   bgPresetIdx: number;
   bgImage: string | null;
+  /** Background image opacity (0-100) */
+  imageOpacity?: number;
   overlayColor: string;
   overlayOpacity: number;
   accentColor: string;
