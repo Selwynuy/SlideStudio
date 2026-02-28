@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Slide } from "@/types/slide";
+import { Slide, AspectRatio } from "@/types/slide";
 import Header from "@/components/Header";
 import SlideList from "@/components/SlideList";
 import Preview from "@/components/Preview";
@@ -59,6 +59,7 @@ function HomeContent() {
   const [textStyleMasterId, setTextStyleMasterId] = useState<string | null>(null);
   const [bgStyleMasterId, setBgStyleMasterId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(true);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("9:16");
   const renderRef = React.useRef<HTMLDivElement>(null);
 
   // Track if we've already initialized to prevent double-loading
@@ -620,7 +621,7 @@ Return: {"description":"..."}`;
         status={exportStatus}
         onClose={() => setIsExporting(false)}
       />
-      {slideForExport && <RenderedSlide ref={renderRef} slide={slideForExport} />}
+      {slideForExport && <RenderedSlide ref={renderRef} slide={slideForExport} aspectRatio={aspectRatio} />}
 
       <Header
         slideCount={slides.length}
@@ -629,6 +630,7 @@ Return: {"description":"..."}`;
         isLoadingSlideshow={isLoadingSlideshow}
         currentSlideshowId={currentSlideshowId}
         onSelectProject={loadSlideshowFromDb}
+        aspectRatio={aspectRatio}
       />
 
       <main className="workspace">
@@ -652,6 +654,8 @@ Return: {"description":"..."}`;
           totalSlides={slides.length}
           editorOpen={editorOpen}
           setEditorOpen={setEditorOpen}
+          aspectRatio={aspectRatio}
+          setAspectRatio={setAspectRatio}
         />
 
         <EditorPanel

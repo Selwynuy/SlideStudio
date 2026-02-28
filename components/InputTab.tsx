@@ -98,19 +98,17 @@ AI will intelligently split it into clean term-and-definition slides."
           </div>
           <div className="ctrl-item">
             <label>Slides per Batch</label>
-            <input
-              type="number"
+            <select
               className="ctrl-select"
-              min="1"
-              max="20"
               value={settings.maxSlides}
-              onChange={(e) => {
-                const value = parseInt(e.target.value);
-                if (value >= 1 && value <= 20) {
-                  setMaxSlides(value);
-                }
-              }}
-            />
+              onChange={(e) => setMaxSlides(parseInt(e.target.value))}
+            >
+              {Array.from({ length: 20 }, (_, i) => i + 1).map((num) => (
+                <option key={num} value={num}>
+                  {num}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="ctrl-item">
             <label>Focus</label>

@@ -1,15 +1,18 @@
 "use client";
 
-import { Slide } from "@/types/slide";
+import { Slide, AspectRatio, ASPECT_RATIO_DIMENSIONS } from "@/types/slide";
 import { BG_PRESETS } from "@/lib/presets";
 import React from "react";
 
 interface RenderedSlideProps {
   slide: Slide;
+  aspectRatio?: AspectRatio;
 }
 
 const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
-  ({ slide }, ref) => {
+  ({ slide, aspectRatio = "9:16" }, ref) => {
+    const dims = ASPECT_RATIO_DIMENSIONS[aspectRatio];
+
     const bgStyle = slide.bgImage
       ? { backgroundImage: `url(${slide.bgImage})`, opacity: (slide.imageOpacity ?? 100) / 100 }
       : { background: BG_PRESETS[slide.bgPresetIdx]?.css || "#111" };
@@ -22,9 +25,10 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
     const baseTitleSize = slide.titleFontSize ?? 30;
     const baseDescSize = slide.descFontSize ?? 10;
 
-    // Scale preview sizes up for 1080x1920 export while keeping current feel
-    const exportTitleSize = baseTitleSize * 3.2; // 30 * 3.2 = 96
-    const exportDescSize = baseDescSize * 4.6; // 10 * 4.6 = 46
+    // Scale font sizes relative to the export canvas height (baseline: 1920px for 9:16)
+    const heightRatio = dims.height / 1920;
+    const exportTitleSize = baseTitleSize * 3.2 * heightRatio;
+    const exportDescSize = baseDescSize * 4.6 * heightRatio;
 
     const titleFontFamily =
       slide.titleFontFamily === "jakarta"
@@ -44,8 +48,8 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
       <div
         ref={ref}
         style={{
-          width: 1080,
-          height: 1920,
+          width: dims.width,
+          height: dims.height,
           position: "absolute",
           left: -9999, // Off-screen
         }}

@@ -1,5 +1,13 @@
 // types/slide.ts
 
+export type AspectRatio = "9:16" | "1:1" | "4:3";
+
+export const ASPECT_RATIO_DIMENSIONS: Record<AspectRatio, { width: number; height: number; label: string }> = {
+  "9:16": { width: 1080, height: 1920, label: "9:16 Vertical" },
+  "1:1":  { width: 1080, height: 1080, label: "1:1 Square" },
+  "4:3":  { width: 1440, height: 1080, label: "4:3 Classic" },
+};
+
 export interface Slide {
   id: string;
   type: "normal" | "hook";

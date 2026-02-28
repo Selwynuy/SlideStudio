@@ -1,11 +1,11 @@
 "use client";
 
-import { Slide } from "@/types/slide";
+import { Slide, AspectRatio, ASPECT_RATIO_DIMENSIONS } from "@/types/slide";
 import { useEffect, useRef, useState } from "react";
 import { BG_PRESETS } from "@/lib/presets";
 
 const BASE_FRAME_WIDTH = 300;
-const BASE_FRAME_HEIGHT = 650;
+const BASE_FRAME_HEIGHT = 650; // Fixed phone frame size
 
 interface PreviewProps {
   slide: Slide | null;
@@ -15,9 +15,11 @@ interface PreviewProps {
   totalSlides: number;
   editorOpen: boolean;
   setEditorOpen: (open: boolean) => void;
+  aspectRatio: AspectRatio;
+  setAspectRatio: (ratio: AspectRatio) => void;
 }
 
-export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides, editorOpen, setEditorOpen }: PreviewProps) {
+export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides, editorOpen, setEditorOpen, aspectRatio, setAspectRatio }: PreviewProps) {
   const [showTikTokUI, setShowTikTokUI] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<HTMLDivElement | null>(null);
@@ -40,8 +42,6 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
   const baseTitleSize = slide?.titleFontSize ?? 30;
   const baseDescSize = slide?.descFontSize ?? 9.5;
   const previewScale = scale || 1;
-  const titleFontSize = Math.max(14, baseTitleSize * previewScale);
-  const descFontSize = Math.max(8, baseDescSize * previewScale);
 
   const titleFontFamily =
     slide?.titleFontFamily === "jakarta"
@@ -57,10 +57,34 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
       ? "'JetBrains Mono', monospace"
       : "'Plus Jakarta Sans', sans-serif";
 
-  useEffect(() => {
-    const runId = "tablet-tuning";
-    const hypothesisId = "H3-fixed-base-frame";
+  const dims = ASPECT_RATIO_DIMENSIONS[aspectRatio];
+  // Calculate inner slide dimensions to fit aspect ratio within fixed frame (letterboxed)
+  const frameAspect = BASE_FRAME_WIDTH / BASE_FRAME_HEIGHT;
+  const slideAspect = dims.width / dims.height;
+  
+  let slideRenderWidth: number;
+  let slideRenderHeight: number;
+  
+  if (slideAspect > frameAspect) {
+    // Slide is wider than frame - fit to width
+    slideRenderWidth = BASE_FRAME_WIDTH;
+    slideRenderHeight = BASE_FRAME_WIDTH / slideAspect;
+  } else {
+    // Slide is taller than frame - fit to height
+    slideRenderHeight = BASE_FRAME_HEIGHT;
+    slideRenderWidth = BASE_FRAME_HEIGHT * slideAspect;
+  }
 
+  // Scale font sizes based on aspect ratio (9:16 is baseline = 1.0)
+  // 9:16 uses full frame height (650), so other ratios scale down proportionally
+  const aspectRatioFontScale = slideRenderHeight / BASE_FRAME_HEIGHT;
+  // Minimum font sizes also scale with aspect ratio
+  const minTitleSize = 14 * aspectRatioFontScale;
+  const minDescSize = 8 * aspectRatioFontScale;
+  const titleFontSize = Math.max(minTitleSize, baseTitleSize * previewScale * aspectRatioFontScale);
+  const descFontSize = Math.max(minDescSize, baseDescSize * previewScale * aspectRatioFontScale);
+
+  useEffect(() => {
     const updateScale = () => {
       const container = containerRef.current;
       if (!container) return;
@@ -69,8 +93,6 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
       const containerHeight = container.clientHeight;
       const navHeight = navRef.current?.offsetHeight ?? 0;
 
-      // Leave generous breathing room and account for preview-nav height.
-      // On mobile we reserve a bit less margin so the frame can grow a touch more.
       const isMobileWidth = containerWidth <= 768;
       const sideMargin = isMobileWidth ? 40 : 80;
       const verticalMargin = isMobileWidth ? 40 : 80;
@@ -149,8 +171,27 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
               fontFamily: "'JetBrains Mono',monospace",
             }}
           >
-            1080 × 1920
+            {dims.width} × {dims.height}
           </span>
+          <select
+            value={aspectRatio}
+            onChange={(e) => setAspectRatio(e.target.value as AspectRatio)}
+            style={{
+              fontSize: "10px",
+              fontFamily: "'JetBrains Mono',monospace",
+              color: "var(--text-muted)",
+              background: "var(--bg3)",
+              border: "1px solid var(--border)",
+              borderRadius: "4px",
+              padding: "2px 6px",
+              cursor: "pointer",
+              outline: "none",
+            }}
+          >
+            <option value="9:16">9:16</option>
+            <option value="1:1">1:1</option>
+            <option value="4:3">4:3</option>
+          </select>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <label
@@ -194,12 +235,24 @@ export default function Preview({ slide, onPrev, onNext, slideIndex, totalSlides
           style={{
             width: BASE_FRAME_WIDTH * scale,
             height: BASE_FRAME_HEIGHT * scale,
+            backgroundColor: "#000000", // Black letterbox bars
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <div className="phone-notch"></div>
           <div className="phone-home"></div>
 
-          <div className="slide-render" id="slideRender">
+          <div 
+            className="slide-render" 
+            id="slideRender"
+            style={{
+              width: slideRenderWidth * scale,
+              height: slideRenderHeight * scale,
+              position: "relative",
+            }}
+          >
             <div className="slide-bg-layer" style={bgStyle}></div>
             <div className="slide-overlay-layer" style={overlayStyle}></div>
 

@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Folder, RotateCcw, LogOut, Sparkles, Check } from "lucide-react";
+import { AspectRatio, ASPECT_RATIO_DIMENSIONS } from "@/types/slide";
 
 interface HeaderProps {
   slideCount: number;
@@ -23,6 +24,7 @@ interface HeaderProps {
   isLoadingSlideshow?: boolean;
   currentSlideshowId?: string | null;
   onSelectProject?: (id: string) => void;
+  aspectRatio?: AspectRatio;
 }
 
 export default function Header({
@@ -32,6 +34,7 @@ export default function Header({
   isLoadingSlideshow,
   currentSlideshowId,
   onSelectProject,
+  aspectRatio = "9:16",
 }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [projectSelectorOpen, setProjectSelectorOpen] = useState(false);
@@ -48,9 +51,9 @@ export default function Header({
         <div className="hdr-center">
           <span id="slideCountBadge">{slideCount} SLIDES</span>
           <span>·</span>
-          <span>9:16 VERTICAL</span>
+          <span>{ASPECT_RATIO_DIMENSIONS[aspectRatio].label.toUpperCase()}</span>
           <span>·</span>
-          <span>TIKTOK OPTIMIZED</span>
+          <span>{aspectRatio === "9:16" ? "TIKTOK OPTIMIZED" : aspectRatio === "1:1" ? "INSTAGRAM / SQUARE" : "CLASSIC / PRESENTATION"}</span>
         </div>
 
         {/* Desktop-only right section */}
