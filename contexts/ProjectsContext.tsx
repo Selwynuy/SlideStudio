@@ -9,6 +9,7 @@ interface ProjectsContextType {
   isLoading: boolean
   error: string | null
   refreshProjects: () => Promise<void>
+  removeProject: (id: string) => void
 }
 
 const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined)
@@ -52,8 +53,12 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     }
   }, [user, hasFetched])
 
+  const removeProject = (id: string) => {
+    setProjects(prev => prev.filter(p => p.id !== id))
+  }
+
   return (
-    <ProjectsContext.Provider value={{ projects, isLoading, error, refreshProjects: fetchProjects }}>
+    <ProjectsContext.Provider value={{ projects, isLoading, error, refreshProjects: fetchProjects, removeProject }}>
       {children}
     </ProjectsContext.Provider>
   )

@@ -30,7 +30,7 @@ export default function ProjectSelector({
   currentSlideshowId,
 }: ProjectSelectorProps) {
   const router = useRouter();
-  const { projects: slideshows, isLoading, error, refreshProjects } = useProjects();
+  const { projects: slideshows, isLoading, error, removeProject } = useProjects();
 
   async function handleDelete(id: string, e: React.MouseEvent) {
     e.stopPropagation();
@@ -40,8 +40,8 @@ export default function ProjectSelector({
 
     try {
       await deleteSlideshow(id);
-      // Refresh projects list after deletion
-      await refreshProjects();
+      // Remove from local state instead of refetching
+      removeProject(id);
       if (id === currentSlideshowId) {
         onCreateNew();
       }
