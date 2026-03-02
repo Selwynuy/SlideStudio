@@ -5,6 +5,8 @@ interface ExportModalProps {
   progress: number;
   status: string;
   onClose: () => void;
+  onCancel?: () => void;
+  canCancel?: boolean;
 }
 
 export default function ExportModal({
@@ -12,8 +14,12 @@ export default function ExportModal({
   progress,
   status,
   onClose,
+  onCancel,
+  canCancel = false,
 }: ExportModalProps) {
   if (!isOpen) return null;
+
+  const isComplete = progress >= 100;
 
   return (
     <div className="modal-bg open">
@@ -28,9 +34,16 @@ export default function ExportModal({
             style={{ width: `${progress}%` }}
           ></div>
         </div>
-        <button className="btn btn-ghost btn-sm" onClick={onClose}>
-          Close
-        </button>
+        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+          {canCancel && !isComplete && onCancel && (
+            <button className="btn btn-ghost btn-sm" onClick={onCancel}>
+              Cancel
+            </button>
+          )}
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>
+            {isComplete ? "Close" : "Close (Background)"}
+          </button>
+        </div>
       </div>
     </div>
   );

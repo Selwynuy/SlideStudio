@@ -1,20 +1,51 @@
 "use client";
 
-import { Slide } from "@/types/slide";
+import { Slide, AspectRatio, ASPECT_RATIO_DIMENSIONS } from "@/types/slide";
 import React, { useState } from "react";
 
 interface ExportTabProps {
   slides: Slide[];
   exportJson: () => void;
-  exportAll: (format: 'png' | 'jpg', branding: boolean) => void; // Update to include options
+  exportAll: (format: 'png' | 'jpg', branding: boolean, asZip?: boolean) => void;
+  exportSelected: (indices: number[], format: 'png' | 'jpg', branding: boolean, asZip?: boolean) => void;
+  aspectRatio?: AspectRatio;
 }
 
-export default function ExportTab({ slides, exportJson, exportAll }: ExportTabProps) {
+export default function ExportTab({ slides, exportJson, exportAll, exportSelected, aspectRatio = "9:16" }: ExportTabProps) {
   const [exportFormat, setExportFormat] = useState<'png' | 'jpg'>('png');
   const [brandingEnabled, setBrandingEnabled] = useState(false);
+  const [exportAsZip, setExportAsZip] = useState(false);
+  
+  const dims = ASPECT_RATIO_DIMENSIONS[aspectRatio];
+
+  // Selective export state
+  const [selectiveOpen, setSelectiveOpen] = useState(false);
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
 
   const handleExportAll = () => {
-    exportAll(exportFormat, brandingEnabled);
+    exportAll(exportFormat, brandingEnabled, exportAsZip);
+  };
+
+  const toggleSelectiveOpen = () => {
+    if (!selectiveOpen) {
+      // Default: select all when opening
+      setSelectedIndices(slides.map((_, i) => i));
+    }
+    setSelectiveOpen((prev) => !prev);
+  };
+
+  const toggleIndex = (i: number) => {
+    setSelectedIndices((prev) =>
+      prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i].sort((a, b) => a - b)
+    );
+  };
+
+  const selectAll = () => setSelectedIndices(slides.map((_, i) => i));
+  const deselectAll = () => setSelectedIndices([]);
+
+  const handleExportSelected = () => {
+    exportSelected(selectedIndices, exportFormat, brandingEnabled, exportAsZip);
+    setSelectiveOpen(false);
   };
 
   return (
@@ -26,8 +57,8 @@ export default function ExportTab({ slides, exportJson, exportAll }: ExportTabPr
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           <div className="ctrl-item">
             <label>Format</label>
-            <select 
-              className="ctrl-select" 
+            <select
+              className="ctrl-select"
               id="exportFormat"
               value={exportFormat}
               onChange={(e) => setExportFormat(e.target.value as 'png' | 'jpg')}
@@ -44,8 +75,8 @@ export default function ExportTab({ slides, exportJson, exportAll }: ExportTabPr
               <div className="toggle-sub">Add subtle SlideStudio mark</div>
             </div>
             <label className="toggle">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 id="brandingToggle"
                 checked={brandingEnabled}
                 onChange={(e) => setBrandingEnabled(e.target.checked)}
@@ -55,7 +86,7 @@ export default function ExportTab({ slides, exportJson, exportAll }: ExportTabPr
           </div>
         </div>
       </div>
-      
+
       <div className="ctrl-section">
         <div className="ctrl-label">
           JSON Export <span></span>
@@ -79,7 +110,7 @@ export default function ExportTab({ slides, exportJson, exportAll }: ExportTabPr
           {"{ } Download JSON"}
         </button>
       </div>
-      
+
       <div className="ctrl-section">
         <div className="ctrl-label">
           Image Export <span></span>
@@ -92,8 +123,24 @@ export default function ExportTab({ slides, exportJson, exportAll }: ExportTabPr
             lineHeight: 1.6,
           }}
         >
-          Exports 1080×1920px PNG images. Each slide rendered with its own
+          Exports {dims.width}×{dims.height}px {exportFormat.toUpperCase()} images ({dims.label}). Each slide rendered with its own
           background, alignment, and overlay settings.
+        </div>
+        <div className="toggle-row" style={{ marginBottom: "10px" }}>
+          <div>
+            <div className="toggle-label" style={{ fontSize: "12px" }}>
+              Export as ZIP
+            </div>
+            <div className="toggle-sub">Download all images in a single ZIP file</div>
+          </div>
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={exportAsZip}
+              onChange={(e) => setExportAsZip(e.target.checked)}
+            />
+            <span className="toggle-slider"></span>
+          </label>
         </div>
         <button
           className="btn btn-cyan"
@@ -106,8 +153,146 @@ export default function ExportTab({ slides, exportJson, exportAll }: ExportTabPr
           }}
         >
           ↓ Export All Images ({exportFormat.toUpperCase()})
+          {exportAsZip && " as ZIP"}
           {brandingEnabled && " with Branding"}
         </button>
+      </div>
+
+      <div className="ctrl-section">
+        <div className="ctrl-label">
+          Selective Export <span></span>
+        </div>
+        <div
+          style={{
+            fontSize: "11px",
+            color: "var(--text-muted)",
+            marginBottom: "10px",
+            lineHeight: 1.6,
+          }}
+        >
+          Pick specific slides to export individually.
+        </div>
+
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={toggleSelectiveOpen}
+          disabled={slides.length === 0}
+          style={{ width: "100%", justifyContent: "center", marginBottom: "8px" }}
+        >
+          {selectiveOpen ? "▲ Hide Slide Selector" : "▼ Choose Slides…"}
+        </button>
+
+        {selectiveOpen && (
+          <div
+            style={{
+              border: "1px solid var(--border)",
+              borderRadius: "6px",
+              overflow: "hidden",
+            }}
+          >
+            {/* Select all / deselect all */}
+            <div
+              style={{
+                display: "flex",
+                gap: "6px",
+                padding: "8px",
+                borderBottom: "1px solid var(--border)",
+                background: "var(--bg-panel)",
+              }}
+            >
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={selectAll}
+                style={{ flex: 1, justifyContent: "center", fontSize: "11px" }}
+              >
+                All
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={deselectAll}
+                style={{ flex: 1, justifyContent: "center", fontSize: "11px" }}
+              >
+                None
+              </button>
+              <span
+                style={{
+                  fontSize: "11px",
+                  color: "var(--text-muted)",
+                  display: "flex",
+                  alignItems: "center",
+                  marginLeft: "4px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {selectedIndices.length}/{slides.length}
+              </span>
+            </div>
+
+            {/* Slide list */}
+            <div style={{ maxHeight: "220px", overflowY: "auto" }}>
+              {slides.map((slide, i) => {
+                const checked = selectedIndices.includes(i);
+                return (
+                  <label
+                    key={slide.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "7px 10px",
+                      cursor: "pointer",
+                      borderBottom: i < slides.length - 1 ? "1px solid var(--border)" : "none",
+                      background: checked ? "var(--bg-hover)" : "transparent",
+                      transition: "background 0.1s",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleIndex(i)}
+                      style={{ accentColor: "var(--cyan)", flexShrink: 0 }}
+                    />
+                    <span
+                      style={{
+                        fontSize: "10px",
+                        color: "var(--text-muted)",
+                        minWidth: "20px",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--text-primary)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {slide.title || "(no title)"}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Confirm export */}
+            <div style={{ padding: "8px", borderTop: "1px solid var(--border)", background: "var(--bg-panel)" }}>
+              <button
+                className="btn btn-cyan"
+                onClick={handleExportSelected}
+                disabled={selectedIndices.length === 0}
+                style={{ width: "100%", justifyContent: "center", padding: "9px" }}
+              >
+                ↓ Export {selectedIndices.length} Slide{selectedIndices.length !== 1 ? "s" : ""} ({exportFormat.toUpperCase()})
+                {exportAsZip && " as ZIP"}
+                {brandingEnabled && " with Branding"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

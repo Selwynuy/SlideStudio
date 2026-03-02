@@ -11,14 +11,14 @@ import Toast from "@/components/Toast";
 import ExportModal from "@/components/ExportModal";
 import ConfirmModal from "@/components/ConfirmModal";
 import { callGemini } from "@/lib/gemini";
-import html2canvas from "html2canvas";
-import RenderedSlide from "@/components/RenderedSlide";
+import ExportRoot from "@/components/ExportRoot";
+import type { ExportRootHandle } from "@/components/ExportRoot";
+import { useExportJob } from "@/hooks/useExportJob";
 import {
   loadSlideshow,
   createSlideshow,
   saveSlides,
   slidesFromRecords,
-  type Slideshow,
 } from "@/lib/slideshows";
 import { useUser } from "@/contexts/UserContext";
 import { useProjects } from "@/contexts/ProjectsContext";
@@ -32,12 +32,12 @@ function HomeContent() {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"input" | "slide" | "bg" | "export" | "slides">("input");
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingText, setLoadingText] = useState("Generating slides…");
   const [sourceText, setSourceText] = useState("");
   const [batchOffset, setBatchOffset] = useState(0);
-  
+
   // Database state
   const [currentSlideshowId, setCurrentSlideshowId] = useState<string | null>(null);
+  const [currentSlideshowTitle, setCurrentSlideshowTitle] = useState<string>("Untitled Slideshow");
   const [isLoadingSlideshow, setIsLoadingSlideshow] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "error" | null>(null);
@@ -45,155 +45,92 @@ function HomeContent() {
 
   // Toast state
   const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<"ok" | "err" | "">("");
+  const [toastType, setToastType] = useState<"ok" | "err" | "">(""); 
 
-  // Export state
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportProgress, setExportProgress] = useState(0);
-  const [exportStatus, setExportStatus] = useState("");
-  const [exportIndex, setExportIndex] = useState(0);
-  const [slideForExport, setSlideForExport] = useState<Slide | null>(null);
-  const [exportFormat, setExportFormat] = useState<'png' | 'jpg'>('png');
-  const [brandingEnabled, setBrandingEnabled] = useState(false);
+  // Editor / aspect-ratio state
   const [pendingDeleteIdx, setPendingDeleteIdx] = useState<number | null>(null);
   const [textStyleMasterId, setTextStyleMasterId] = useState<string | null>(null);
   const [bgStyleMasterId, setBgStyleMasterId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(true);
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("9:16");
-  const renderRef = React.useRef<HTMLDivElement>(null);
+
+  // Export – imperative job system
+  const exportRootRef = useRef<ExportRootHandle>(null);
+  const { state: exportState, startExport, cancel: cancelExport, reset: resetExport } = useExportJob(exportRootRef);
 
   // Track if we've already initialized to prevent double-loading
   const hasInitialized = useRef(false);
 
-  // Check authentication and load slideshow on mount
+  // ── Auth / initialisation ───────────────────────────────────────────────────
   useEffect(() => {
     if (isUserLoading) return;
-    
+
     if (!user) {
-      router.push('/auth/login');
+      router.push("/auth/login");
       return;
     }
-    
-    // Only initialize once per user session
+
     if (hasInitialized.current) return;
     hasInitialized.current = true;
-    
-    // Check for slideshow ID in URL
-    const slideshowId = searchParams.get('id');
+
+    const slideshowId = searchParams.get("id");
     if (slideshowId) {
       loadSlideshowFromDb(slideshowId);
     } else {
-      // If no slideshow ID, create a new one
       createNewSlideshow();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isUserLoading]);
 
-  // Reset initialization flag when user changes
   useEffect(() => {
     if (!user) {
       hasInitialized.current = false;
     }
   }, [user]);
 
-  // Auto-save slides when they change
+  // ── Auto-save ───────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!currentSlideshowId) return;
-    
-    // Clear existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    
-    // Don't auto-save on initial load
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     if (slides.length === 0) return;
-    
-    // Set save status to saving
+
     setSaveStatus("saving");
-    
-    // Debounce save by 2 seconds
     saveTimeoutRef.current = setTimeout(async () => {
       await saveSlidesToDb();
     }, 2000);
-    
+
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slides, currentSlideshowId]);
 
-  // Close editor on Escape key
+  // ── Keyboard shortcut ───────────────────────────────────────────────────────
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && editorOpen) {
-        setEditorOpen(false);
-      }
+      if (e.key === "Escape" && editorOpen) setEditorOpen(false);
     };
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, [editorOpen]);
 
-  // Load slideshow from database
+  // ── DB helpers ──────────────────────────────────────────────────────────────
   async function loadSlideshowFromDb(id: string) {
     setIsLoadingSlideshow(true);
     try {
       const data = await loadSlideshow(id);
       setCurrentSlideshowId(data.id);
+      setCurrentSlideshowTitle(data.title || "Untitled Slideshow");
       const loadedSlides = slidesFromRecords(data.slides);
       setSlides(loadedSlides);
-      if (loadedSlides.length > 0) {
-        setActiveIdx(0);
-      }
+      if (loadedSlides.length > 0) setActiveIdx(0);
       showToast("Slideshow loaded", "ok");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Failed to load slideshow";
       console.error("Failed to load slideshow:", error);
-      showToast(error.message || "Failed to load slideshow", "err");
+      showToast(msg, "err");
     } finally {
       setIsLoadingSlideshow(false);
-    }
-  }
-
-  // Save slides to database
-  async function saveSlidesToDb() {
-    if (!currentSlideshowId) return;
-    
-    setIsSaving(true);
-    try {
-      await saveSlides(currentSlideshowId, slides);
-      setSaveStatus("saved");
-      setTimeout(() => setSaveStatus(null), 2000);
-    } catch (error: any) {
-      console.error("Failed to save slides:", error);
-      setSaveStatus("error");
-      showToast("Failed to save", "err");
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  // Create new slideshow
-  async function createNewSlideshow() {
-    try {
-      const slideshow = await createSlideshow("Untitled Slideshow", {
-        tone,
-        complexity,
-        maxSlides,
-        focus,
-        hook,
-      });
-      setCurrentSlideshowId(slideshow.id);
-      setSlides([]);
-      setActiveIdx(null);
-      // Update URL without reload
-      window.history.replaceState({}, '', `/?id=${slideshow.id}`);
-      // Refresh projects list to include the new one
-      await refreshProjects();
-      showToast("New slideshow created", "ok");
-    } catch (error: any) {
-      console.error("Failed to create slideshow:", error);
-      showToast(error.message || "Failed to create slideshow", "err");
     }
   }
 
@@ -205,64 +142,53 @@ function HomeContent() {
   const [focus, setFocus] = useState("key_points");
   const [hook, setHook] = useState(true);
 
-  // Export trigger effect - sets up the next slide to export
-  useEffect(() => {
-    if (isExporting && exportIndex < slides.length) {
-      setExportStatus(`Rendering slide ${exportIndex + 1} of ${slides.length}…`);
-      setSlideForExport(slides[exportIndex]);
-    } else if (isExporting && exportIndex >= slides.length) {
-      setExportStatus(`✓ ${slides.length} slides exported!`);
-      setExportProgress(100);
-      // Optional: auto-close modal after delay
-      setTimeout(() => setIsExporting(false), 2000);
-    }
-  }, [isExporting, exportIndex, slides]);
-
-  // Export render effect - handles the actual canvas rendering
-  useEffect(() => {
-    if (slideForExport && renderRef.current) {
-      const timer = setTimeout(() => {
-        html2canvas(renderRef.current!, {
-          scale: 2,
-          backgroundColor: null,
-        }).then((canvas) => {
-          const format = exportFormat === 'jpg' ? 'jpeg' : 'png';
-          const quality = exportFormat === 'jpg' ? 0.9 : 1;
-          
-          const link = document.createElement("a");
-          link.download = `slide-${String(exportIndex + 1).padStart(2, "0")}.${exportFormat}`;
-          link.href = canvas.toDataURL(`image/${format}`, quality);
-          link.click();
-          
-          // Add branding if enabled
-          if (brandingEnabled) {
-            // You can implement watermark logic here later
-            console.log("Branding watermark would be added here");
-          }
-          
-          setExportProgress(((exportIndex + 1) / slides.length) * 100);
-          setExportIndex(exportIndex + 1);
-          setSlideForExport(null); // Clear after rendering
-        }).catch((error) => {
-          console.error("Export failed:", error);
-          showToast("Export failed", "err");
-          setIsExporting(false);
-        });
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [slideForExport, exportIndex, slides.length, exportFormat, brandingEnabled]);
-
-  function showToast(message: string, type: "ok" | "err" | "") {
-    setToastMessage(message);
-    setToastType(type);
-    // Auto-hide toast after 3 seconds
-    if (type) {
-      setTimeout(() => setToastMessage(""), 3000);
+  async function saveSlidesToDb() {
+    if (!currentSlideshowId) return;
+    setIsSaving(true);
+    try {
+      await saveSlides(currentSlideshowId, slides);
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus(null), 2000);
+    } catch (error: unknown) {
+      console.error("Failed to save slides:", error);
+      setSaveStatus("error");
+      showToast("Failed to save", "err");
+    } finally {
+      setIsSaving(false);
     }
   }
 
+  async function createNewSlideshow() {
+    try {
+      const slideshow = await createSlideshow("Untitled Slideshow", {
+        tone,
+        complexity,
+        maxSlides,
+        focus,
+        hook,
+      });
+      setCurrentSlideshowId(slideshow.id);
+      setCurrentSlideshowTitle(slideshow.title || "Untitled Slideshow");
+      setSlides([]);
+      setActiveIdx(null);
+      window.history.replaceState({}, "", `/?id=${slideshow.id}`);
+      await refreshProjects();
+      showToast("New slideshow created", "ok");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Failed to create slideshow";
+      console.error("Failed to create slideshow:", error);
+      showToast(msg, "err");
+    }
+  }
+
+  // ── Toast ───────────────────────────────────────────────────────────────────
+  function showToast(message: string, type: "ok" | "err" | "") {
+    setToastMessage(message);
+    setToastType(type);
+    if (type) setTimeout(() => setToastMessage(""), 3000);
+  }
+
+  // ── Slide manipulation ──────────────────────────────────────────────────────
   function addSlide() {
     const textMaster = textStyleMasterId
       ? slides.find((s) => s.id === textStyleMasterId)
@@ -271,7 +197,7 @@ function HomeContent() {
       ? slides.find((s) => s.id === bgStyleMasterId)
       : null;
 
-    let newSlide: Slide = {
+    const newSlide: Slide = {
       id: Date.now().toString(),
       type: "normal",
       title: "New Slide",
@@ -300,7 +226,6 @@ function HomeContent() {
   function moveSlide(index: number, direction: "up" | "down") {
     const newIdx = direction === "up" ? index - 1 : index + 1;
     if (newIdx < 0 || newIdx >= slides.length) return;
-
     const newSlides = [...slides];
     [newSlides[index], newSlides[newIdx]] = [newSlides[newIdx], newSlides[index]];
     setSlides(newSlides);
@@ -308,13 +233,11 @@ function HomeContent() {
   }
 
   function deleteSlide(index: number) {
-    // Open center modal asking for confirmation
     setPendingDeleteIdx(index);
   }
 
   function confirmDeleteSlide() {
     if (pendingDeleteIdx === null) return;
-
     const index = pendingDeleteIdx;
     const deletedId = slides[index]?.id;
     const newSlides = slides.filter((_, i) => i !== index);
@@ -323,12 +246,8 @@ function HomeContent() {
       activeIdx === index ? Math.min(index, newSlides.length - 1) : activeIdx
     );
     if (deletedId) {
-      if (textStyleMasterId === deletedId) {
-        setTextStyleMasterId(null);
-      }
-      if (bgStyleMasterId === deletedId) {
-        setBgStyleMasterId(null);
-      }
+      if (textStyleMasterId === deletedId) setTextStyleMasterId(null);
+      if (bgStyleMasterId === deletedId) setBgStyleMasterId(null);
     }
     setPendingDeleteIdx(null);
     showToast("Slide deleted", "err");
@@ -340,11 +259,9 @@ function HomeContent() {
 
   function updateSlide(updated: Slide) {
     if (activeIdx === null) return;
-
     let newSlides = [...slides];
     newSlides[activeIdx] = updated;
 
-    // If this slide is the text style master, propagate text styles to all
     if (textStyleMasterId && updated.id === textStyleMasterId) {
       newSlides = newSlides.map((s) =>
         s.id === updated.id
@@ -362,7 +279,6 @@ function HomeContent() {
       );
     }
 
-    // If this slide is the background style master, propagate bg styles to all
     if (bgStyleMasterId && updated.id === bgStyleMasterId) {
       newSlides = newSlides.map((s) =>
         s.id === updated.id
@@ -385,7 +301,6 @@ function HomeContent() {
 
   function applyTextStyleToAll() {
     if (activeIdx === null || slides.length === 0) return;
-
     const source = slides[activeIdx];
     setSlides(
       slides.map((s) => ({
@@ -404,7 +319,6 @@ function HomeContent() {
 
   function applyBgToAll() {
     if (activeIdx === null || slides.length === 0) return;
-
     const source = slides[activeIdx];
     setSlides(
       slides.map((s) => ({
@@ -422,17 +336,15 @@ function HomeContent() {
   }
 
   function prevSlide() {
-    if (activeIdx !== null && activeIdx > 0) {
-      setActiveIdx(activeIdx - 1);
-    }
+    if (activeIdx !== null && activeIdx > 0) setActiveIdx(activeIdx - 1);
   }
 
   function nextSlide() {
-    if (activeIdx !== null && activeIdx < slides.length - 1) {
+    if (activeIdx !== null && activeIdx < slides.length - 1)
       setActiveIdx(activeIdx + 1);
-    }
   }
 
+  // ── AI generation ────────────────────────────────────────────────────────────
   async function generateSlides(isBatch: boolean) {
     if (!rawText) {
       showToast("Paste content first", "err");
@@ -446,8 +358,6 @@ function HomeContent() {
     }
 
     const settings = { tone, complexity, maxSlides, focus, hook };
-
-    setLoadingText(isBatch ? "Generating next batch…" : "Analyzing content…");
     const chunkSize = 4000;
     const textChunk = (isBatch ? sourceText : rawText).substring(
       batchOffset,
@@ -458,9 +368,7 @@ function HomeContent() {
 Return ONLY valid JSON — no markdown, no backticks, no explanation.
 Rules:
 - titles: max 6 words, punchy, scroll-stopping. Bebas Neue style thinking.
-- descriptions: 1-3 sentences, ${settings.complexity} level, ${
-      settings.tone
-    } tone
+- descriptions: 1-3 sentences, ${settings.complexity} level, ${settings.tone} tone
 - focus on: ${settings.focus.replace(/_/g, " ")}
 - generate up to ${settings.maxSlides} slides from the provided chunk
 - if hook=true, first slide is a hook: attention-grabbing question or bold statement, type="hook"
@@ -472,10 +380,9 @@ Rules:
     }Convert this content chunk into slides (batch starting at char offset ${batchOffset}):\n\n${textChunk}`;
 
     try {
-      setLoadingText("Building slides…");
       const result = await callGemini(userPrompt, systemPrompt);
       if (result.slides?.length) {
-        const newSlidesData = result.slides.map((s: any, i: number) => ({
+        const newSlidesData = result.slides.map((s: Record<string, unknown>, i: number) => ({
           id: (Date.now() + i).toString(),
           type: s.type || "normal",
           title: s.title || "",
@@ -517,13 +424,11 @@ Rules:
 
   async function regenField(field: "title" | "description" | "both") {
     if (activeIdx === null) return;
-
     const slide = slides[activeIdx];
     const sysPrompt = `You are a TikTok slide content assistant. Return ONLY valid JSON, no markdown.
 Tone: ${tone}. Complexity: ${complexity}.`;
 
     setIsLoading(true);
-    setLoadingText(`Rewriting ${field}…`);
 
     try {
       if (field === "title" || field === "both") {
@@ -557,48 +462,143 @@ Return: {"description":"..."}`;
     }
   }
 
-  const exportAll = useCallback((format: 'png' | 'jpg', branding: boolean) => {
-    if (slides.length === 0) {
-      showToast("No slides to export", "err");
-      return;
+  // ── Export helpers ───────────────────────────────────────────────────────────
+  function validateSlidesForExport(
+    slidesToValidate: Slide[]
+  ): { valid: boolean; error?: string } {
+    if (slidesToValidate.length === 0)
+      return { valid: false, error: "No slides to export" };
+    for (let i = 0; i < slidesToValidate.length; i++) {
+      const slide = slidesToValidate[i];
+      if (!slide.id || !slide.title)
+        return { valid: false, error: `Slide ${i + 1} is missing required data` };
     }
-    
-    setExportFormat(format);
-    setBrandingEnabled(branding);
-    setExportProgress(0);
-    setExportStatus(`Preparing ${format.toUpperCase()} export...`);
-    setExportIndex(0);
-    setIsExporting(true);
-  }, [slides.length, showToast]);
+    return { valid: true };
+  }
+
+  const exportAll = useCallback(
+    (format: "png" | "jpg", branding: boolean, asZip: boolean = false) => {
+      const validation = validateSlidesForExport(slides);
+      if (!validation.valid) {
+        showToast(validation.error || "No slides to export", "err");
+        return;
+      }
+      if (exportState.status === "running") {
+        showToast("Export already in progress", "err");
+        return;
+      }
+      startExport({
+        slides,
+        originalIndices: slides.map((_, i) => i),
+        format,
+        branding,
+        asZip,
+        aspectRatio,
+        slideshowTitle: currentSlideshowTitle,
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [slides, aspectRatio, currentSlideshowTitle, exportState.status, startExport]
+  );
+
+  const exportSelected = useCallback(
+    (
+      indices: number[],
+      format: "png" | "jpg",
+      branding: boolean,
+      asZip: boolean = false
+    ) => {
+      const validIndices = indices.filter((i) => i >= 0 && i < slides.length);
+      if (validIndices.length === 0) {
+        showToast("No valid slides selected", "err");
+        return;
+      }
+      const selectedSlides = validIndices.map((i) => slides[i]);
+      const validation = validateSlidesForExport(selectedSlides);
+      if (!validation.valid) {
+        showToast(validation.error || "Invalid slides selected", "err");
+        return;
+      }
+      if (exportState.status === "running") {
+        showToast("Export already in progress", "err");
+        return;
+      }
+      startExport({
+        slides: selectedSlides,
+        originalIndices: validIndices,
+        format,
+        branding,
+        asZip,
+        aspectRatio,
+        slideshowTitle: currentSlideshowTitle,
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [slides, aspectRatio, currentSlideshowTitle, exportState.status, startExport]
+  );
 
   function exportJson() {
     if (slides.length === 0) {
       showToast("No slides to export", "err");
       return;
     }
-    
     const data = JSON.stringify(
       {
+        metadata: {
+          slideshowTitle: currentSlideshowTitle,
+          slideshowId: currentSlideshowId,
+          exportDate: new Date().toISOString(),
+          version: "2.0",
+          aspectRatio,
+          totalSlides: slides.length,
+        },
         slides: slides.map((s, i) => ({
           index: i + 1,
+          id: s.id,
           type: s.type,
           title: s.title,
           description: s.description,
           align: s.align,
+          bgPresetIdx: s.bgPresetIdx,
+          bgImage: s.bgImage,
+          imageOpacity: s.imageOpacity ?? 100,
+          overlayColor: s.overlayColor,
+          overlayOpacity: s.overlayOpacity,
           accentColor: s.accentColor,
+          titleColor: s.titleColor,
+          descColor: s.descColor,
+          titleFontSize: s.titleFontSize ?? 30,
+          descFontSize: s.descFontSize ?? 10,
+          titleFontFamily: s.titleFontFamily ?? "bebas",
+          descFontFamily: s.descFontFamily ?? "jakarta",
+          dividerEnabled: s.dividerEnabled ?? true,
+          eyebrow: s.eyebrow,
         })),
       },
       null,
       2
     );
     const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "slides.json";
+    a.href = url;
+    const sanitizedTitle = currentSlideshowTitle
+      .replace(/[^a-z0-9]/gi, "_")
+      .toLowerCase();
+    a.download = `${sanitizedTitle || "slides"}.json`;
     a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 100);
     showToast("JSON exported", "ok");
   }
 
+  // ── Derived export UI state ──────────────────────────────────────────────────
+  const showExportModal = exportState.status !== "idle";
+  const exportCanCancel = exportState.status === "running";
+
+  // ── Unused variable suppression ──────────────────────────────────────────────
+  void isSaving; // referenced only by saveSlidesToDb internals
+
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <>
       <Toast
@@ -616,12 +616,16 @@ Return: {"description":"..."}`;
         onCancel={cancelDeleteSlide}
       />
       <ExportModal
-        isOpen={isExporting}
-        progress={exportProgress}
-        status={exportStatus}
-        onClose={() => setIsExporting(false)}
+        isOpen={showExportModal}
+        progress={exportState.progress}
+        status={exportState.statusText}
+        onClose={resetExport}
+        onCancel={cancelExport}
+        canCancel={exportCanCancel}
       />
-      {slideForExport && <RenderedSlide ref={renderRef} slide={slideForExport} aspectRatio={aspectRatio} />}
+
+      {/* Always-mounted off-screen renderer – no append/remove dance */}
+      <ExportRoot ref={exportRootRef} />
 
       <Header
         slideCount={slides.length}
@@ -683,7 +687,8 @@ Return: {"description":"..."}`;
           onMoveSlide={moveSlide}
           onDeleteSlide={deleteSlide}
           exportJson={exportJson}
-          exportAll={() => exportAll("png", false)}
+          exportAll={exportAll}
+          exportSelected={exportSelected}
           applyTextStyleToAll={applyTextStyleToAll}
           applyBgToAll={applyBgToAll}
           activeTab={activeTab}
@@ -694,6 +699,7 @@ Return: {"description":"..."}`;
           setBgStyleMasterId={setBgStyleMasterId}
           editorOpen={editorOpen}
           setEditorOpen={setEditorOpen}
+          aspectRatio={aspectRatio}
         />
       </main>
     </>
@@ -702,7 +708,13 @@ Return: {"description":"..."}`;
 
 export default function Home() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-screen">
+          Loading...
+        </div>
+      }
+    >
       <HomeContent />
     </Suspense>
   );

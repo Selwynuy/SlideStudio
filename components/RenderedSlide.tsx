@@ -7,10 +7,11 @@ import React from "react";
 interface RenderedSlideProps {
   slide: Slide;
   aspectRatio?: AspectRatio;
+  slideIndex?: number;
 }
 
 const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
-  ({ slide, aspectRatio = "9:16" }, ref) => {
+  ({ slide, aspectRatio = "9:16", slideIndex }, ref) => {
     const dims = ASPECT_RATIO_DIMENSIONS[aspectRatio];
 
     const bgStyle = slide.bgImage
@@ -50,11 +51,9 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
         style={{
           width: dims.width,
           height: dims.height,
-          position: "absolute",
-          left: -9999, // Off-screen
         }}
       >
-        <div className="slide-render" style={{ width: "100%", height: "100%" }}>
+        <div className="slide-render" style={{ width: "100%", height: "100%", overflow: "visible" }}>
           <div
             className="slide-bg-layer"
             style={{ ...bgStyle, position: "absolute", inset: 0 }}
@@ -63,12 +62,26 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
             className="slide-overlay-layer"
             style={{ ...overlayStyle, position: "absolute", inset: 0 }}
           ></div>
-          <div className={`slide-content-layer align-${slide.align}`}>
+          <div 
+            className={`slide-content-layer align-${slide.align}`}
+            style={{
+              // Override CSS percentages for export - fill entire slide
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              width: '100%',
+              transform: 'none',
+              padding: '8% 10%', // Generous padding while using full canvas
+              overflow: 'visible', // Allow content to extend fully
+              justifyContent: 'center', // Match preview - center content vertically
+            }}
+          >
             {slide.type === "hook" && (
               <div className="sld-hook-eyebrow">{slide.eyebrow || "STOP SCROLLING →"}</div>
             )}
             <div className="sld-num">
-              {slide.type === "hook" ? "HOOK" : String(slide.id).padStart(2, "0")}
+              {slide.type === "hook" ? "HOOK" : slideIndex !== undefined ? String(slideIndex + 1).padStart(2, "0") : String(slide.id).padStart(2, "0")}
             </div>
             <div
               className="sld-title"
@@ -94,6 +107,8 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
                 fontSize: `${exportDescSize}px`,
                 lineHeight: "1.6",
                 fontFamily: descFontFamily,
+                maxHeight: 'none', // Remove max-height constraint for export
+                overflow: 'visible', // Allow full text to be visible
               }}
             >
               {slide.description}
