@@ -477,7 +477,7 @@ Return: {"description":"..."}`;
   }
 
   const exportAll = useCallback(
-    (format: "png" | "jpg", branding: boolean, asZip: boolean = false) => {
+    (format: "png" | "jpg", asZip: boolean = false) => {
       const validation = validateSlidesForExport(slides);
       if (!validation.valid) {
         showToast(validation.error || "No slides to export", "err");
@@ -491,7 +491,6 @@ Return: {"description":"..."}`;
         slides,
         originalIndices: slides.map((_, i) => i),
         format,
-        branding,
         asZip,
         aspectRatio,
         slideshowTitle: currentSlideshowTitle,
@@ -505,7 +504,6 @@ Return: {"description":"..."}`;
     (
       indices: number[],
       format: "png" | "jpg",
-      branding: boolean,
       asZip: boolean = false
     ) => {
       const validIndices = indices.filter((i) => i >= 0 && i < slides.length);
@@ -527,7 +525,6 @@ Return: {"description":"..."}`;
         slides: selectedSlides,
         originalIndices: validIndices,
         format,
-        branding,
         asZip,
         aspectRatio,
         slideshowTitle: currentSlideshowTitle,

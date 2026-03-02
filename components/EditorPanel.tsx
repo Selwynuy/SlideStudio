@@ -37,7 +37,8 @@ interface EditorPanelProps {
   onMoveSlide: (index: number, direction: "up" | "down") => void;
   onDeleteSlide: (index: number) => void;
   exportJson: () => void;
-  exportAll: () => void;
+  exportAll: (format: 'png' | 'jpg', asZip?: boolean) => void;
+  exportSelected: (indices: number[], format: 'png' | 'jpg', asZip?: boolean) => void;
   applyTextStyleToAll: () => void;
   applyBgToAll: () => void;
   activeTab: "input" | "slide" | "bg" | "export" | "slides";
@@ -48,6 +49,7 @@ interface EditorPanelProps {
   setBgStyleMasterId: (id: string | null) => void;
   editorOpen: boolean;
   setEditorOpen: (open: boolean) => void;
+  aspectRatio?: "9:16" | "1:1" | "4:3";
 }
 
 export default function EditorPanel({
@@ -73,6 +75,7 @@ export default function EditorPanel({
   onDeleteSlide,
   exportJson,
   exportAll,
+  exportSelected,
   applyTextStyleToAll,
   applyBgToAll,
   activeTab,
@@ -83,6 +86,7 @@ export default function EditorPanel({
   setBgStyleMasterId,
   editorOpen,
   setEditorOpen,
+  aspectRatio,
 }: EditorPanelProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [isTabletOrSmaller, setIsTabletOrSmaller] = useState(false);
@@ -193,6 +197,8 @@ export default function EditorPanel({
           slides={slides}
           exportJson={exportJson}
           exportAll={exportAll}
+          exportSelected={exportSelected}
+          aspectRatio={aspectRatio}
         />
       )}
       {activeTab === "slides" && isTabletOrSmaller && (

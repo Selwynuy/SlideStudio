@@ -25,7 +25,6 @@ export interface StartExportOptions {
   slides: Slide[];
   originalIndices: number[];
   format: "png" | "jpg";
-  branding: boolean;
   asZip: boolean;
   aspectRatio: AspectRatio;
   slideshowTitle: string;

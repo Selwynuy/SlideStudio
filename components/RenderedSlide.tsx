@@ -10,6 +10,10 @@ interface RenderedSlideProps {
   slideIndex?: number;
 }
 
+// Base frame dimensions (matches Preview.tsx phone frame)
+const BASE_FRAME_WIDTH = 300;
+const BASE_FRAME_HEIGHT = 650;
+
 const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
   ({ slide, aspectRatio = "9:16", slideIndex }, ref) => {
     const dims = ASPECT_RATIO_DIMENSIONS[aspectRatio];
@@ -23,14 +27,52 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
       opacity: slide.overlayOpacity / 100,
     };
 
+    // --- Scale ratio: maps CSS base px values (designed for ~300px preview) to export canvas px ---
+    // Calculate how the slide fits inside the phone frame (same letterbox logic as Preview.tsx)
+    const frameAspect = BASE_FRAME_WIDTH / BASE_FRAME_HEIGHT;
+    const slideAspect = dims.width / dims.height;
+
+    let slideRenderWidth: number;
+    if (slideAspect > frameAspect) {
+      slideRenderWidth = BASE_FRAME_WIDTH; // fit to frame width
+    } else {
+      slideRenderWidth = BASE_FRAME_HEIGHT * slideAspect; // fit to frame height
+    }
+
+    // scaleRatio: how much larger the export canvas is vs the preview render
+    const scaleRatio = dims.width / slideRenderWidth;
+
+    // --- Font sizes (base values = user-facing "preview px") ---
     const baseTitleSize = slide.titleFontSize ?? 30;
-    const baseDescSize = slide.descFontSize ?? 10;
+    const baseDescSize = slide.descFontSize ?? 9.5;
 
-    // Scale font sizes relative to the export canvas height (baseline: 1920px for 9:16)
-    const heightRatio = dims.height / 1920;
-    const exportTitleSize = baseTitleSize * 3.2 * heightRatio;
-    const exportDescSize = baseDescSize * 4.6 * heightRatio;
+    const exportTitleSize = baseTitleSize * scaleRatio;
+    const exportDescSize = baseDescSize * scaleRatio;
 
+    // --- All CSS base px values scaled for export canvas ---
+    // .slide-content-layer: padding: 10px 8px
+    const exportPaddingV = 10 * scaleRatio;
+    const exportPaddingH = 8 * scaleRatio;
+
+    // .sld-title: margin-bottom: 4px
+    const exportTitleMarginBottom = 4 * scaleRatio;
+
+    // .sld-divider: width: 30px; height: 2px; margin: 8px 0
+    const exportDividerWidth = 30 * scaleRatio;
+    const exportDividerHeight = 2 * scaleRatio;
+    const exportDividerMarginV = 24 * scaleRatio;
+
+    // .sld-num: font-size: 7px; margin-bottom: 6px
+    const exportNumSize = 7 * scaleRatio;
+    const exportNumMarginBottom = 6 * scaleRatio;
+
+    // .sld-hook-eyebrow: font-size: 7px; padding: 2px 7px; margin-bottom: 8px
+    const exportEyebrowSize = 7 * scaleRatio;
+    const exportEyebrowPaddingV = 2 * scaleRatio;
+    const exportEyebrowPaddingH = 7 * scaleRatio;
+    const exportEyebrowMarginBottom = 8 * scaleRatio;
+
+    // --- Font families ---
     const titleFontFamily =
       slide.titleFontFamily === "jakarta"
         ? "'Plus Jakarta Sans', sans-serif"
@@ -53,43 +95,58 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
           height: dims.height,
         }}
       >
-        <div className="slide-render" style={{ width: "100%", height: "100%", overflow: "visible" }}>
+        <div
+          className="slide-render"
+          style={{ width: "100%", height: "100%"}}
+        >
           <div
             className="slide-bg-layer"
             style={{ ...bgStyle, position: "absolute", inset: 0 }}
-          ></div>
+          />
           <div
             className="slide-overlay-layer"
             style={{ ...overlayStyle, position: "absolute", inset: 0 }}
-          ></div>
-          <div 
+          />
+          <div
             className={`slide-content-layer align-${slide.align}`}
             style={{
-              // Override CSS percentages for export - fill entire slide
-              top: 0,
-              bottom: 0,
-              left: 0,
-              right: 0,
-              width: '100%',
-              transform: 'none',
-              padding: '8% 10%', // Generous padding while using full canvas
-              overflow: 'visible', // Allow content to extend fully
-              justifyContent: 'center', // Match preview - center content vertically
+              // CSS handles percentage-based layout (width: 76%, top: 8%, bottom: 22%)
+              // Only override the px values that need to be scaled for export resolution
+              padding: `${exportPaddingV}px ${exportPaddingH}px`,
             }}
           >
             {slide.type === "hook" && (
-              <div className="sld-hook-eyebrow">{slide.eyebrow || "STOP SCROLLING →"}</div>
+              <div
+                className="sld-hook-eyebrow"
+                style={{
+                  fontSize: `${exportEyebrowSize}px`,
+                  padding: `${exportEyebrowPaddingV}px ${exportEyebrowPaddingH}px`,
+                  marginBottom: `${exportEyebrowMarginBottom}px`,
+                }}
+              >
+                {slide.eyebrow || "STOP SCROLLING →"}
+              </div>
             )}
-            <div className="sld-num">
-              {slide.type === "hook" ? "HOOK" : slideIndex !== undefined ? String(slideIndex + 1).padStart(2, "0") : String(slide.id).padStart(2, "0")}
+            <div
+              className="sld-num"
+              style={{
+                fontSize: `${exportNumSize}px`,
+                marginBottom: `${exportNumMarginBottom}px`,
+              }}
+            >
+              {slide.type === "hook"
+                ? "HOOK"
+                : slideIndex !== undefined
+                ? String(slideIndex + 1).padStart(2, "0")
+                : String(slide.id).padStart(2, "0")}
             </div>
             <div
               className="sld-title"
               style={{
                 color: slide.titleColor,
                 fontSize: `${exportTitleSize}px`,
-                lineHeight: "1.1",
                 fontFamily: titleFontFamily,
+                marginBottom: `${exportTitleMarginBottom}px`,
               }}
             >
               {slide.title}
@@ -97,8 +154,14 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
             {slide.dividerEnabled ?? true ? (
               <div
                 className="sld-divider"
-                style={{ background: slide.accentColor }}
-              ></div>
+                style={{
+                  background: slide.accentColor,
+                  width: `${exportDividerWidth}px`,
+                  height: `${exportDividerHeight}px`,
+                  margin: `${exportDividerMarginV}px 0`,
+                  borderRadius: exportDividerHeight / 2,
+                }}
+              />
             ) : null}
             <div
               className="sld-desc"
@@ -107,8 +170,6 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
                 fontSize: `${exportDescSize}px`,
                 lineHeight: "1.6",
                 fontFamily: descFontFamily,
-                maxHeight: 'none', // Remove max-height constraint for export
-                overflow: 'visible', // Allow full text to be visible
               }}
             >
               {slide.description}

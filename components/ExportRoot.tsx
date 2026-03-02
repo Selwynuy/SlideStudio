@@ -19,8 +19,7 @@ export interface ExportRootHandle {
     slide: Slide,
     aspectRatio: AspectRatio,
     slideIndex: number,
-    format: "png" | "jpg",
-    branding: boolean
+    format: "png" | "jpg"
   ): Promise<Blob>;
 }
 
@@ -31,7 +30,6 @@ interface CaptureRequest {
   aspectRatio: AspectRatio;
   slideIndex: number;
   format: "png" | "jpg";
-  branding: boolean;
   resolve: (blob: Blob) => void;
   reject: (err: Error) => void;
 }
@@ -64,23 +62,6 @@ function preloadImage(url: string): Promise<void> {
   });
 }
 
-function addBrandingWatermark(canvas: HTMLCanvasElement) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  ctx.save();
-  // Scale relative to a 1080px-wide, 2× export canvas
-  const scale = canvas.width / (1080 * 2);
-  const fontSize = Math.max(14 * scale, 10);
-  const pad = Math.max(12 * scale, 8);
-  ctx.globalAlpha = 0.5;
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `bold ${fontSize}px "JetBrains Mono", monospace`;
-  ctx.textAlign = "right";
-  ctx.textBaseline = "bottom";
-  ctx.fillText("SlideStudio", canvas.width - pad, canvas.height - pad);
-  ctx.restore();
-}
-
 function raf2(): Promise<void> {
   return new Promise((res) =>
     requestAnimationFrame(() => requestAnimationFrame(() => res()))
@@ -105,14 +86,13 @@ const ExportRoot = forwardRef<ExportRootHandle, {}>(
     useImperativeHandle(
       ref,
       () => ({
-        captureSlide(slide, aspectRatio, slideIndex, format, branding) {
+        captureSlide(slide, aspectRatio, slideIndex, format) {
           return new Promise<Blob>((resolve, reject) => {
             setRequest({
               slide,
               aspectRatio,
               slideIndex,
               format,
-              branding,
               resolve,
               reject,
             });
@@ -194,10 +174,7 @@ const ExportRoot = forwardRef<ExportRootHandle, {}>(
             logging: false,
           });
 
-          // ⑩ Optional branding watermark
-          if (request.branding) addBrandingWatermark(canvas);
-
-          // ⑪ canvas → Blob (direct, no dataURL round-trip)
+          // ⑩ canvas → Blob (direct, no dataURL round-trip)
           const mimeType =
             request.format === "jpg" ? "image/jpeg" : "image/png";
           const quality = request.format === "jpg" ? 0.9 : 1;

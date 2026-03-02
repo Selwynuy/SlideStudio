@@ -13,7 +13,6 @@ export interface ExportJobOptions {
    */
   originalIndices: number[];
   format: "png" | "jpg";
-  branding: boolean;
   asZip: boolean;
   aspectRatio: AspectRatio;
   slideshowTitle: string;
@@ -45,7 +44,6 @@ export async function runExportJob(opts: ExportJobOptions): Promise<void> {
     slides,
     originalIndices,
     format,
-    branding,
     asZip,
     aspectRatio,
     slideshowTitle,
@@ -92,8 +90,7 @@ export async function runExportJob(opts: ExportJobOptions): Promise<void> {
           slide,
           aspectRatio,
           i, // slideIndex (0-based position in export queue)
-          format,
-          branding
+          format
         );
         lastErr = null;
         break; // success – exit retry loop
