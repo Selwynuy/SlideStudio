@@ -10,6 +10,7 @@ interface ProjectsContextType {
   error: string | null
   refreshProjects: () => Promise<void>
   removeProject: (id: string) => void
+  renameProject: (id: string, title: string) => void
 }
 
 const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined)
@@ -57,8 +58,12 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     setProjects(prev => prev.filter(p => p.id !== id))
   }
 
+  const renameProject = (id: string, title: string) => {
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, title } : p))
+  }
+
   return (
-    <ProjectsContext.Provider value={{ projects, isLoading, error, refreshProjects: fetchProjects, removeProject }}>
+    <ProjectsContext.Provider value={{ projects, isLoading, error, refreshProjects: fetchProjects, removeProject, renameProject }}>
       {children}
     </ProjectsContext.Provider>
   )

@@ -558,7 +558,7 @@ header {
 .sld-hook-eyebrow {
   font-family: 'JetBrains Mono', monospace; font-size: 7px;
   letter-spacing: 2px; text-transform: uppercase;
-  padding: 2px 7px; border-radius: 3px;
+  padding: 4px 10px; border-radius: 3px;
   background: rgba(255,107,53,0.25); color: #ffaa80;
   border: 1px solid rgba(255,107,53,0.35);
   margin-bottom: 8px;
@@ -572,6 +572,7 @@ header {
   font-size: 30px; line-height: 1.0;
   color: #fff; text-shadow: 0 2px 16px rgba(0,0,0,0.7);
   margin-bottom: 4px; letter-spacing: 1.5px;
+  white-space: pre-wrap;
 }
 .sld-hook-title {
   font-size: 36px; line-height: 0.95;
@@ -589,6 +590,7 @@ header {
   max-height: 100%;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 /* Nav arrows under preview */

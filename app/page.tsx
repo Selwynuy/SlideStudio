@@ -17,11 +17,16 @@ import { useExportJob } from "@/hooks/useExportJob";
 import {
   loadSlideshow,
   createSlideshow,
+  updateSlideshow,
+  listSlideshows,
   saveSlides,
   slidesFromRecords,
 } from "@/lib/slideshows";
 import { useUser } from "@/contexts/UserContext";
 import { useProjects } from "@/contexts/ProjectsContext";
+import ProjectSettingsModal, {
+  type ProjectSettingsValues,
+} from "@/components/ProjectSettingsModal";
 
 function HomeContent() {
   const router = useRouter();
@@ -60,6 +65,11 @@ function HomeContent() {
 
   // Track if we've already initialized to prevent double-loading
   const hasInitialized = useRef(false);
+  // Skip saving aspectRatio on the initial set from loadSlideshowFromDb
+  const skipAspectRatioSave = useRef(false);
+
+  // Project Settings Modal state
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
 
   // ── Auth / initialisation ───────────────────────────────────────────────────
   useEffect(() => {
@@ -77,7 +87,8 @@ function HomeContent() {
     if (slideshowId) {
       loadSlideshowFromDb(slideshowId);
     } else {
-      createNewSlideshow();
+      // Load latest project instead of creating a new one every visit
+      loadLatestOrCreate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isUserLoading]);
@@ -105,6 +116,18 @@ function HomeContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slides, currentSlideshowId]);
 
+  // ── Persist aspect ratio ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!currentSlideshowId) return;
+    if (skipAspectRatioSave.current) {
+      skipAspectRatioSave.current = false;
+      return;
+    }
+    updateSlideshow(currentSlideshowId, { settings: { tone, complexity, maxSlides, focus, hook, aspectRatio } })
+      .catch((err) => console.error("Failed to save aspect ratio:", err));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aspectRatio]);
+
   // ── Keyboard shortcut ───────────────────────────────────────────────────────
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -121,6 +144,18 @@ function HomeContent() {
       const data = await loadSlideshow(id);
       setCurrentSlideshowId(data.id);
       setCurrentSlideshowTitle(data.title || "Untitled Slideshow");
+      // Restore generation settings saved with the project
+      if (data.settings) {
+        if (data.settings.tone) setTone(data.settings.tone);
+        if (data.settings.complexity) setComplexity(data.settings.complexity);
+        if (data.settings.maxSlides) setMaxSlides(data.settings.maxSlides);
+        if (data.settings.focus) setFocus(data.settings.focus);
+        if (data.settings.hook !== undefined) setHook(data.settings.hook);
+        if (data.settings.aspectRatio) {
+          skipAspectRatioSave.current = true;
+          setAspectRatio(data.settings.aspectRatio as AspectRatio);
+        }
+      }
       const loadedSlides = slidesFromRecords(data.slides);
       setSlides(loadedSlides);
       if (loadedSlides.length > 0) setActiveIdx(0);
@@ -131,6 +166,23 @@ function HomeContent() {
       showToast(msg, "err");
     } finally {
       setIsLoadingSlideshow(false);
+    }
+  }
+
+  async function loadLatestOrCreate() {
+    try {
+      const slideshows = await listSlideshows();
+      if (slideshows.length > 0) {
+        // listSlideshows is already ordered by updated_at DESC
+        await loadSlideshowFromDb(slideshows[0].id);
+        window.history.replaceState({}, "", `/?id=${slideshows[0].id}`);
+      } else {
+        // No projects yet — open create wizard
+        setProjectModalOpen(true);
+      }
+    } catch {
+      // Fallback: open create wizard
+      setProjectModalOpen(true);
     }
   }
 
@@ -158,17 +210,22 @@ function HomeContent() {
     }
   }
 
-  async function createNewSlideshow() {
+  async function createNewSlideshow(values?: ProjectSettingsValues) {
+    const title = values?.title || "Untitled Slideshow";
+    const settings = values
+      ? { tone: values.tone, complexity: values.complexity, maxSlides: values.maxSlides, focus: values.focus, hook: values.hook, aspectRatio }
+      : { tone, complexity, maxSlides, focus, hook, aspectRatio };
     try {
-      const slideshow = await createSlideshow("Untitled Slideshow", {
-        tone,
-        complexity,
-        maxSlides,
-        focus,
-        hook,
-      });
+      const slideshow = await createSlideshow(title, settings);
       setCurrentSlideshowId(slideshow.id);
       setCurrentSlideshowTitle(slideshow.title || "Untitled Slideshow");
+      if (values) {
+        setTone(values.tone);
+        setComplexity(values.complexity);
+        setMaxSlides(values.maxSlides);
+        setFocus(values.focus);
+        setHook(values.hook);
+      }
       setSlides([]);
       setActiveIdx(null);
       window.history.replaceState({}, "", `/?id=${slideshow.id}`);
@@ -179,6 +236,15 @@ function HomeContent() {
       console.error("Failed to create slideshow:", error);
       showToast(msg, "err");
     }
+  }
+
+  function openCreateModal() {
+    setProjectModalOpen(true);
+  }
+
+  async function handleProjectModalSubmit(values: ProjectSettingsValues) {
+    setProjectModalOpen(false);
+    await createNewSlideshow(values);
   }
 
   // ── Toast ───────────────────────────────────────────────────────────────────
@@ -624,9 +690,24 @@ Return: {"description":"..."}`;
       {/* Always-mounted off-screen renderer – no append/remove dance */}
       <ExportRoot ref={exportRootRef} />
 
+      <ProjectSettingsModal
+        isOpen={projectModalOpen}
+        mode="create"
+        initialValues={{
+          title: currentSlideshowTitle,
+          tone,
+          complexity,
+          maxSlides,
+          focus,
+          hook,
+        }}
+        onSubmit={handleProjectModalSubmit}
+        onCancel={() => setProjectModalOpen(false)}
+      />
+
       <Header
         slideCount={slides.length}
-        onNewSession={createNewSlideshow}
+        onNewSession={openCreateModal}
         saveStatus={saveStatus}
         isLoadingSlideshow={isLoadingSlideshow}
         currentSlideshowId={currentSlideshowId}

@@ -117,13 +117,18 @@ export default function SlideTab({
           )} 
           <span style={{fontSize:'9px',color:'var(--text-dim)'}}>{slide.title.length}/{isHook ? 60 : 80}</span>
         </div>
-        <input 
-          className="sef-input" 
+        <textarea 
+          className="sef-textarea" 
           value={slide.title} 
           maxLength={isHook ? 60 : 80} 
           onChange={e => handleChange('title', e.target.value)} 
           placeholder={isHook ? "Your powerful hook line (max 4-5 words)…" : "Punchy title (max 6 words)…"}
-          style={isHook ? {borderColor: 'rgba(255,107,53,0.3)'} : {}}
+          style={{
+            ...(isHook ? {borderColor: 'rgba(255,107,53,0.3)'} : {}),
+            minHeight: '48px',
+            fontWeight: 700,
+            fontSize: '13px',
+          }}
         />
         
         {/* Hook-specific suggestions */}

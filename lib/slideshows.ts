@@ -11,6 +11,7 @@ export interface Slideshow {
     maxSlides?: number
     focus?: string
     hook?: boolean
+    aspectRatio?: string
   }
 }
 

@@ -66,10 +66,10 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
     const exportNumSize = 7 * scaleRatio;
     const exportNumMarginBottom = 6 * scaleRatio;
 
-    // .sld-hook-eyebrow: font-size: 7px; padding: 2px 7px; margin-bottom: 8px
+    // .sld-hook-eyebrow: font-size: 7px; padding: 4px 10px; margin-bottom: 10px
     const exportEyebrowSize = 7 * scaleRatio;
-    const exportEyebrowPaddingV = 2 * scaleRatio;
-    const exportEyebrowPaddingH = 7 * scaleRatio;
+    const exportEyebrowPaddingV = 4 * scaleRatio;
+    const exportEyebrowPaddingH = 10 * scaleRatio;
     const exportEyebrowMarginBottom = 8 * scaleRatio;
 
     // --- Font families ---
@@ -134,9 +134,7 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
                 marginBottom: `${exportNumMarginBottom}px`,
               }}
             >
-              {slide.type === "hook"
-                ? "HOOK"
-                : slideIndex !== undefined
+              {slideIndex !== undefined
                 ? String(slideIndex + 1).padStart(2, "0")
                 : String(slide.id).padStart(2, "0")}
             </div>
