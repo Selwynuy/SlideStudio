@@ -1,15 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Slide, AspectRatio, ASPECT_RATIO_DIMENSIONS } from "@/types/slide";
 import { renderSlideHtml } from "@/lib/export/renderSlideHtml";
-import chromium from "@sparticuz/chromium";
+import chromium from "@sparticuz/chromium-min";
 import puppeteer from "puppeteer-core";
 
 // Vercel: Chromium must run on the Node.js runtime (not Edge).
 export const runtime = "nodejs";
 // Prevent caching and ensure the handler runs dynamically.
 export const dynamic = "force-dynamic";
+// Allow enough time for Chromium to download/unpack and render.
+export const maxDuration = 60;
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { slide, aspectRatio = "9:16", slideIndex, format = "png" }: {
@@ -26,14 +28,21 @@ export async function POST(request: Request) {
     const dims = ASPECT_RATIO_DIMENSIONS[aspectRatio];
     const html = renderSlideHtml(slide, aspectRatio, slideIndex);
 
-    // Launch Puppeteer (Sparticuz Chromium) — works on Vercel serverless.
-    // Cast to `any` to avoid relying on type declarations; runtime API is stable.
-    const chromiumAny: any = chromium as any;
+    // Compute the URL where the Chromium tarball is hosted.
+    // On Vercel, VERCEL_URL is e.g. "slide-studio-xi.vercel.app".
+    const defaultBaseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000";
+    const chromiumPackUrl =
+      process.env.CHROMIUM_PACK_URL ?? `${defaultBaseUrl}/chromium-pack.tar`;
+
+    // Launch Puppeteer using @sparticuz/chromium-min.
+    // chromium.executablePath(url) will download & extract the tarball into /tmp in serverless.
     const browser = await puppeteer.launch({
-      args: chromiumAny.args,
-      defaultViewport: chromiumAny.defaultViewport ?? null,
-      executablePath: await chromiumAny.executablePath(),
-      headless: chromiumAny.headless,
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport ?? null,
+      executablePath: await chromium.executablePath(chromiumPackUrl),
+      headless: chromium.headless,
     });
 
     try {
