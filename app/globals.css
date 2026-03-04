@@ -60,11 +60,11 @@
 
 /* ── Base resets ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
+html, body { 
+  margin: 0; 
+  padding: 0; 
+  height: 100%; 
+  overflow: hidden; 
 }
 body {
   background: var(--bg);
@@ -89,7 +89,7 @@ input[type=range] {
   background: var(--border2);
   outline: none;
   cursor: pointer;
-}
+  }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 14px;
@@ -107,7 +107,7 @@ input[type=color] {
   background: none;
   cursor: pointer;
   padding: 0;
-}
+  }
 
 /* ── Named keyframes (referenced from components via Tailwind animate-[...]) */
 @keyframes spin {
@@ -226,5 +226,14 @@ input[type=color] {
     background: var(--card) !important;
     color: var(--card-foreground) !important;
     border-color: var(--border) !important;
+  }
+
+  /* Export: during capture we disable all transitions/animations so
+     html2canvas sees a fully stable layout. */
+  #export-root.is-exporting,
+  #export-root.is-exporting * {
+    transition: none !important;
+    animation: none !important;
+    caret-color: transparent !important;
   }
 }

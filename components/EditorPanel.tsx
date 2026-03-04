@@ -183,29 +183,29 @@ export default function EditorPanel({
                   ? "text-primary border-primary"
                   : "text-muted-foreground border-transparent hover:text-foreground"
               )}
-            >
+        >
               {t.label}
             </button>
           ))}
-        </div>
+      </div>
 
         {/* Tab content */}
-        {activeTab === "input" && (
-          <InputTab
-            generateSlides={generateSlides}
-            isLoading={isLoading}
-            settings={settings}
-            setRawText={setRawText}
-            setTone={setTone}
-            setComplexity={setComplexity}
-            setMaxSlides={setMaxSlides}
-            setFocus={setFocus}
-            setHook={setHook}
-            sourceText={sourceText}
-            batchOffset={batchOffset}
-          />
-        )}
-        {activeTab === "slide" && (
+      {activeTab === "input" && (
+        <InputTab
+          generateSlides={generateSlides}
+          isLoading={isLoading}
+          settings={settings}
+          setRawText={setRawText}
+          setTone={setTone}
+          setComplexity={setComplexity}
+          setMaxSlides={setMaxSlides}
+          setFocus={setFocus}
+          setHook={setHook}
+          sourceText={sourceText}
+          batchOffset={batchOffset}
+        />
+      )}
+      {activeTab === "slide" && (
           <SlideTab
             slide={slide}
             updateSlide={updateSlide}
@@ -214,8 +214,8 @@ export default function EditorPanel({
             textStyleMasterId={textStyleMasterId}
             setTextStyleMasterId={setTextStyleMasterId}
           />
-        )}
-        {activeTab === "bg" && (
+      )}
+      {activeTab === "bg" && (
           <BgTab
             slide={slide}
             updateSlide={updateSlide}
@@ -223,26 +223,26 @@ export default function EditorPanel({
             bgStyleMasterId={bgStyleMasterId}
             setBgStyleMasterId={setBgStyleMasterId}
           />
-        )}
-        {activeTab === "export" && (
-          <ExportTab
-            slides={slides}
-            exportJson={exportJson}
-            exportAll={exportAll}
-            exportSelected={exportSelected}
-            aspectRatio={aspectRatio}
-          />
-        )}
-        {activeTab === "slides" && isTabletOrSmaller && (
-          <SlidesTab
-            slides={slides}
-            activeIdx={activeIdx}
-            setActiveIdx={setActiveIdx}
-            onAddSlide={onAddSlide}
-            onMoveSlide={onMoveSlide}
-            onDeleteSlide={onDeleteSlide}
-          />
-        )}
+      )}
+      {activeTab === "export" && (
+        <ExportTab
+          slides={slides}
+          exportJson={exportJson}
+          exportAll={exportAll}
+          exportSelected={exportSelected}
+          aspectRatio={aspectRatio}
+        />
+      )}
+      {activeTab === "slides" && isTabletOrSmaller && (
+        <SlidesTab
+          slides={slides}
+          activeIdx={activeIdx}
+          setActiveIdx={setActiveIdx}
+          onAddSlide={onAddSlide}
+          onMoveSlide={onMoveSlide}
+          onDeleteSlide={onDeleteSlide}
+        />
+      )}
       </div>
     </>
   );

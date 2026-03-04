@@ -274,8 +274,8 @@ export default function Header({
               <div className="flex items-center gap-3 pb-2 border-b border-border mb-1">
                 <CurrentUserAvatar />
                 <span className="text-[11px] text-muted-foreground font-mono tracking-[0.5px] flex-1 truncate">
-                  {user.email}
-                </span>
+                    {user.email}
+                  </span>
               </div>
 
               {/* Menu items */}
@@ -283,7 +283,7 @@ export default function Header({
                 { icon: <Folder className="size-4" />, label: "Projects", action: () => { setProjectSelectorOpen(true); setMenuOpen(false); } },
                 { icon: <RotateCcw className="size-4" />, label: "New Project", action: () => { onNewSession(); setMenuOpen(false); } },
               ].map(({ icon, label, action }) => (
-                <button
+              <button
                   key={label}
                   onClick={action}
                   className={cn(
@@ -295,7 +295,7 @@ export default function Header({
                 >
                   {icon}
                   {label}
-                </button>
+              </button>
               ))}
 
               <button
@@ -329,7 +329,7 @@ export default function Header({
           )}
         </div>
       </div>
-
+      
       <ProjectSelector
         isOpen={projectSelectorOpen}
         onClose={() => setProjectSelectorOpen(false)}

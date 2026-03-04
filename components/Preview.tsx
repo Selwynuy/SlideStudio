@@ -138,6 +138,7 @@ export default function Preview({
   setAspectRatio,
 }: PreviewProps) {
   const [showTikTokUI, setShowTikTokUI] = useState(false);
+  const [showRawCanvas, setShowRawCanvas] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const navRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
@@ -237,6 +238,15 @@ export default function Preview({
             />
             Show TikTok UI
           </label>
+          <label className="hidden md:flex items-center gap-1.5 cursor-pointer text-[11px] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={showRawCanvas}
+              onChange={(e) => setShowRawCanvas(e.target.checked)}
+              className="accent-primary"
+            />
+            Show raw export canvas
+          </label>
 
           {/* Editor toggle — mobile only */}
           <button
@@ -257,74 +267,109 @@ export default function Preview({
 
       {/* Scrollable preview area */}
       <div className="flex-1 overflow-hidden flex flex-col items-center justify-start py-6 px-5 gap-0">
-        {/* Phone frame */}
-        <div
-          id="phoneFrame"
-          className={cn(styles.phoneFrame, "relative overflow-hidden shrink-0 rounded-[44px] border-[8px] border-[#1a1a1a]")}
-          style={{
-            width: BASE_FRAME_WIDTH * scale,
-            height: BASE_FRAME_HEIGHT * scale,
-            backgroundColor: "#000000",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {/* Dynamic island notch */}
+        <div className="flex w-full items-start justify-center gap-6">
+          {/* Phone frame (what the user normally sees) */}
           <div
-            className="absolute top-[10px] left-1/2 -translate-x-1/2 z-[30] rounded-[20px] bg-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]"
-            style={{ width: 90 * scale, height: 26 * scale }}
-          />
-          {/* Home indicator */}
-          <div
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 z-[30] rounded-[3px] bg-white/30"
-            style={{ width: 90 * scale, height: 4 * scale }}
-          />
-
-          {/* Slide canvas */}
-          <div
-            id="slideRender"
+            id="phoneFrame"
+            className={cn(
+              styles.phoneFrame,
+              "relative overflow-hidden shrink-0 rounded-[44px] border-[8px] border-[#1a1a1a]"
+            )}
             style={{
-              width: slideRenderWidth * scale,
-              height: slideRenderHeight * scale,
-              position: "relative",
+              width: BASE_FRAME_WIDTH * scale,
+              height: BASE_FRAME_HEIGHT * scale,
+              backgroundColor: "#000000",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            {slide ? (
+            {/* Dynamic island notch */}
+            <div
+              className="absolute top-[10px] left-1/2 -translate-x-1/2 z-[30] rounded-[20px] bg-black shadow-[0_0_0_1px_rgba(255,255,255,0.06)]"
+              style={{ width: 90 * scale, height: 26 * scale }}
+            />
+            {/* Home indicator */}
+            <div
+              className="absolute bottom-2 left-1/2 -translate-x-1/2 z-[30] rounded-[3px] bg-white/30"
+              style={{ width: 90 * scale, height: 4 * scale }}
+            />
+
+            {/* Slide canvas */}
+            <div
+              id="slideRender"
+              style={{
+                width: slideRenderWidth * scale,
+                height: slideRenderHeight * scale,
+                position: "relative",
+              }}
+            >
+              {slide ? (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: dims.width,
+                    height: dims.height,
+                    transform: `scale(${canvasScale * scale})`,
+                    transformOrigin: "top left",
+                  }}
+                >
+                  <RenderedSlide slide={slide} aspectRatio={aspectRatio} slideIndex={slideIndex} />
+                </div>
+              ) : (
+                /* No-slide placeholder */
+                <>
+                  <div className="absolute inset-0 bg-secondary" />
+                  <div
+                    className="absolute z-10 inset-0 flex flex-col items-center justify-center text-center px-2"
+                    style={{ top: "8%", bottom: "22%" }}
+                  >
+                    <div className="font-display text-[30px] leading-none text-white tracking-[1.5px]">
+                      Select a slide
+                    </div>
+                    <div className="font-sans text-[9.5px] leading-[1.6] text-white/85 mt-2">
+                      Generate or select a slide to preview.
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* TikTok chrome */}
+              {showTikTokUI && <TikTokChrome />}
+            </div>
+          </div>
+
+          {/* Raw export canvas (mirrors ExportRoot) for side‑by‑side inspection */}
+          {showRawCanvas && slide && (
+            <div className="hidden xl:flex flex-col items-center gap-1 shrink-0">
+              <span className="text-[10px] font-mono text-muted-foreground tracking-[0.6px] uppercase">
+                Export canvas (raw)
+              </span>
               <div
+                className="relative border border-border bg-black overflow-hidden rounded-md"
                 style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: dims.width,
-                  height: dims.height,
-                  transform: `scale(${canvasScale * scale})`,
-                  transformOrigin: "top left",
+                  width: dims.width * 0.25,
+                  height: dims.height * 0.25,
                 }}
               >
-                <RenderedSlide slide={slide} aspectRatio={aspectRatio} slideIndex={slideIndex} />
-              </div>
-            ) : (
-              /* No-slide placeholder */
-              <>
-                <div className="absolute inset-0 bg-secondary" />
                 <div
-                  className="absolute z-10 inset-0 flex flex-col items-center justify-center text-center px-2"
-                  style={{ top: "8%", bottom: "22%" }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: dims.width,
+                    height: dims.height,
+                    transform: "scale(0.25)",
+                    transformOrigin: "top left",
+                  }}
                 >
-                  <div className="font-display text-[30px] leading-none text-white tracking-[1.5px]">
-                    Select a slide
-                  </div>
-                  <div className="font-sans text-[9.5px] leading-[1.6] text-white/85 mt-2">
-                    Generate or select a slide to preview.
-                  </div>
+                  <RenderedSlide slide={slide} aspectRatio={aspectRatio} slideIndex={slideIndex} />
                 </div>
-              </>
-            )}
-
-            {/* TikTok chrome */}
-            {showTikTokUI && <TikTokChrome />}
-          </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
