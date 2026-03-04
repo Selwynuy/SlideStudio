@@ -95,19 +95,21 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
             )}
 
             {/* Slide number */}
-            <div
-              style={{
-                fontFamily: "'JetBrains Mono', monospace",
-                fontSize: `${numSize}px`,
-                color: "rgba(255,255,255,0.25)",
-                letterSpacing: `${2 * scaleRatio}px`,
-                marginBottom: `${numMarginBottom}px`,
-              }}
-            >
-              {slideIndex !== undefined
-                ? String(slideIndex + 1).padStart(2, "0")
-                : String(slide.id).padStart(2, "0")}
-            </div>
+            {(slide.showSlideNumber ?? true) && (
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: `${numSize}px`,
+                  color: "rgba(255,255,255,0.25)",
+                  letterSpacing: `${2 * scaleRatio}px`,
+                  marginBottom: `${numMarginBottom}px`,
+                }}
+              >
+                {slideIndex !== undefined
+                  ? String(slideIndex + 1).padStart(2, "0")
+                  : String(slide.id).padStart(2, "0")}
+              </div>
+            )}
 
             {/* Title */}
             <div

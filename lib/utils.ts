@@ -35,6 +35,7 @@ export function createDefaultSlide(overrides: Partial<Slide> = {}): Slide {
     titleFontFamily: "bebas",
     descFontFamily: "jakarta",
     dividerEnabled: true,
+    showSlideNumber: true,
     ...overrides,
   }
 }

@@ -34,4 +34,6 @@ export interface Slide {
   eyebrow?: string;
   /** Whether the divider line is shown / colored */
   dividerEnabled?: boolean;
+  /** Whether the slide number is shown */
+  showSlideNumber?: boolean;
 }

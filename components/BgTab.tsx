@@ -163,6 +163,19 @@ export default function BgTab({
         </div>
       </CtrlSection>
 
+      {/* ── Slide number ─────────────────────────────────────────────────────── */}
+      <CtrlSection>
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] text-muted-foreground cursor-pointer">
+            Show slide number
+          </label>
+          <Toggle
+            checked={slide.showSlideNumber ?? true}
+            onChange={(checked) => set("showSlideNumber", checked)}
+          />
+        </div>
+      </CtrlSection>
+
       {/* ── Apply to all ────────────────────────────────────────────────────── */}
       <CtrlSection>
         <RegenBtn onClick={applyBgToAll} className="w-full justify-center">

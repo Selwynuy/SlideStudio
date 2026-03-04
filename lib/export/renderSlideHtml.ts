@@ -60,9 +60,11 @@ export function renderSlideHtml(
   ` : "";
 
   // Slide number
-  const slideNum = slideIndex !== undefined
-    ? String(slideIndex + 1).padStart(2, "0")
-    : String(slide.id).padStart(2, "0");
+  const slideNumHtml = (slide.showSlideNumber ?? true) ? `
+      <div class="slide-number">${slideIndex !== undefined
+        ? String(slideIndex + 1).padStart(2, "0")
+        : String(slide.id).padStart(2, "0")}</div>
+    ` : "";
 
   // Divider
   const dividerHtml = (slide.dividerEnabled ?? true) ? `
@@ -175,7 +177,7 @@ export function renderSlideHtml(
     <div class="overlay-layer" style="background-color: ${slide.overlayColor}; opacity: ${slide.overlayOpacity / 100};"></div>
     <div class="content-layer">
       ${eyebrowHtml}
-      <div class="slide-number">${slideNum}</div>
+      ${slideNumHtml}
       <div class="slide-title">${escapeHtml(slide.title)}</div>
       ${dividerHtml}
       <div class="slide-description">${escapeHtml(slide.description)}</div>
