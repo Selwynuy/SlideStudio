@@ -199,13 +199,6 @@ export default function Preview({
         >
           <div className="phone-notch" />
           <div className="phone-home" />
-
-          {/*
-           * slide-render: sized to the letterboxed slot inside the phone frame.
-           * RenderedSlide (full export canvas) is absolutely positioned inside and
-           * scaled down via CSS transform so it visually fills this slot exactly —
-           * making the preview a 1:1 representation of the export.
-           */}
           <div
             className="slide-render"
             id="slideRender"

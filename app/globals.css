@@ -556,12 +556,12 @@ header {
 .slide-content-layer.align-center { align-items: center; text-align: center; }
 .slide-content-layer.align-right { align-items: flex-end; text-align: right; }
 .sld-hook-eyebrow {
-  font-family: 'JetBrains Mono', monospace; font-size: 7px;
-  letter-spacing: 2px; text-transform: uppercase;
-  padding: 4px 10px; border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace; font-size: 20px;
+  letter-spacing: 2px; 
+  border-radius: 3px;
   background: rgba(255,107,53,0.25); color: #ffaa80;
   border: 1px solid rgba(255,107,53,0.35);
-  margin-bottom: 8px;
+  padding: 5px 20px 20px 20px;
 }
 .sld-num {
   font-family: 'JetBrains Mono', monospace; font-size: 7px;

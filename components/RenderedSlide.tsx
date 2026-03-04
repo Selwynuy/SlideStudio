@@ -49,10 +49,7 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
     const exportTitleSize = baseTitleSize * scaleRatio;
     const exportDescSize = baseDescSize * scaleRatio;
 
-    // --- All CSS base px values scaled for export canvas ---
-    // .slide-content-layer: padding: 10px 8px
-    const exportPaddingV = 10 * scaleRatio;
-    const exportPaddingH = 8 * scaleRatio;
+
 
     // .sld-title: margin-bottom: 4px
     const exportTitleMarginBottom = 4 * scaleRatio;
@@ -66,11 +63,7 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
     const exportNumSize = 7 * scaleRatio;
     const exportNumMarginBottom = 6 * scaleRatio;
 
-    // .sld-hook-eyebrow: font-size: 7px; padding: 4px 10px; margin-bottom: 10px
-    const exportEyebrowSize = 7 * scaleRatio;
-    const exportEyebrowPaddingV = 4 * scaleRatio;
-    const exportEyebrowPaddingH = 10 * scaleRatio;
-    const exportEyebrowMarginBottom = 8 * scaleRatio;
+    // .sld-hook-eyebrow: uses base CSS values from globals.css (no export scaling)
 
     // --- Font families ---
     const titleFontFamily =
@@ -109,21 +102,9 @@ const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
           />
           <div
             className={`slide-content-layer align-${slide.align}`}
-            style={{
-              // CSS handles percentage-based layout (width: 76%, top: 8%, bottom: 22%)
-              // Only override the px values that need to be scaled for export resolution
-              padding: `${exportPaddingV}px ${exportPaddingH}px`,
-            }}
           >
             {slide.type === "hook" && (
-              <div
-                className="sld-hook-eyebrow"
-                style={{
-                  fontSize: `${exportEyebrowSize}px`,
-                  padding: `${exportEyebrowPaddingV}px ${exportEyebrowPaddingH}px`,
-                  marginBottom: `${exportEyebrowMarginBottom}px`,
-                }}
-              >
+              <div className="sld-hook-eyebrow">
                 {slide.eyebrow || "STOP SCROLLING →"}
               </div>
             )}
