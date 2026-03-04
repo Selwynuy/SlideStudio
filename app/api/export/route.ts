@@ -2,16 +2,40 @@ import { NextResponse } from "next/server";
 import { Slide, AspectRatio, ASPECT_RATIO_DIMENSIONS } from "@/types/slide";
 import { renderSlideHtml } from "@/lib/export/renderSlideHtml";
 
-// Import Puppeteer (for serverless, you'd use @sparticuz/chromium + puppeteer-core)
+/**
+ * Small wrapper so we can:
+ * - use full `puppeteer` in development (Chrome is installed locally)
+ * - use `@sparticuz/chromium` + `puppeteer-core` in production (serverless-safe)
+ */
 async function getPuppeteer() {
-  const puppeteer = await import("puppeteer");
+  const isDev = process.env.NODE_ENV !== "production";
+
+  if (isDev) {
+    // Local dev: use bundled Puppeteer which downloads Chrome once on your machine
+    const puppeteer = await import("puppeteer");
+    return {
+      launch: async () =>
+        puppeteer.default.launch({
+          headless: true,
+        }),
+    };
+  }
+
+  // Production: use @sparticuz/chromium to get a serverless-compatible Chrome binary
+  const chromium = await import("@sparticuz/chromium");
+  const puppeteerCore = await import("puppeteer-core");
+
+  // `chromium` is a CommonJS-style default export; grab it explicitly for typing.
+  const chromiumInstance: any = (chromium as any).default ?? chromium;
+
   return {
-    launch: async () => {
-      return puppeteer.default.launch({
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      });
-    },
+    launch: async () =>
+      puppeteerCore.default.launch({
+        args: chromiumInstance.args,
+        defaultViewport: chromiumInstance.defaultViewport ?? null,
+        executablePath: await chromiumInstance.executablePath(),
+        headless: chromiumInstance.headless,
+      }),
   };
 }
 
