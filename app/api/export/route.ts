@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { Slide, AspectRatio, ASPECT_RATIO_DIMENSIONS } from "@/types/slide";
 import { renderSlideHtml } from "@/lib/export/renderSlideHtml";
 
+// Vercel: Chromium must run on the Node.js runtime (not Edge).
+export const runtime = "nodejs";
+// Prevent caching and ensure the handler runs dynamically.
+export const dynamic = "force-dynamic";
+
 /**
  * Small wrapper so we can:
  * - use full `puppeteer` in development (Chrome is installed locally)

@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   experimental: {
     serverComponentsExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
   },
+  // Next.js also supports a non-experimental variant in some versions.
+  // Keeping both improves compatibility across Next releases.
+  // (Unknown keys are ignored.)
+  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
   /**
    * Make sure the Chromium package (including its /bin brotli files) is
    * traced into the export API route bundle.
