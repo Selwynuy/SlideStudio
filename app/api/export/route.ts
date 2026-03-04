@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       slide: Slide;
       aspectRatio?: AspectRatio;
       slideIndex?: number;
-      format?: "png" | "jpg";
+      format?: "png" | "jpg" | "pdf";
     } = body;
 
     if (!slide) {
@@ -28,21 +28,29 @@ export async function POST(request: NextRequest) {
     const dims = ASPECT_RATIO_DIMENSIONS[aspectRatio];
     const html = renderSlideHtml(slide, aspectRatio, slideIndex);
 
-    // Compute the URL where the Chromium tarball is hosted.
-    // On Vercel, VERCEL_URL is e.g. "slide-studio-xi.vercel.app".
-    const defaultBaseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
-    const chromiumPackUrl =
-      process.env.CHROMIUM_PACK_URL ?? `${defaultBaseUrl}/chromium-pack.tar`;
+    // Choose Chromium executable path based on environment:
+    // - CHROMIUM_REMOTE_EXEC_PATH: remote tarball URL (recommended for Vercel)
+    // - CHROMIUM_LOCAL_EXEC_PATH: local Chrome/Chromium path (for dev)
+    const remotePath = process.env.CHROMIUM_REMOTE_EXEC_PATH;
+    const localPath = process.env.CHROMIUM_LOCAL_EXEC_PATH;
 
-    // Launch Puppeteer using @sparticuz/chromium-min.
-    // chromium.executablePath(url) will download & extract the tarball into /tmp in serverless.
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(chromiumPackUrl),
-      headless: true,
-    });
+    if (!remotePath && !localPath) {
+      throw new Error(
+        "Missing CHROMIUM_REMOTE_EXEC_PATH or CHROMIUM_LOCAL_EXEC_PATH"
+      );
+    }
+
+    const browser =
+      remotePath
+        ? await puppeteer.launch({
+            args: chromium.args,
+            executablePath: await chromium.executablePath(remotePath),
+            headless: true,
+          })
+        : await puppeteer.launch({
+            executablePath: localPath,
+            headless: true,
+          });
 
     try {
       const page = await browser.newPage();
@@ -62,7 +70,26 @@ export async function POST(request: NextRequest) {
       // Wait for fonts to load
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Capture screenshot
+      // PDF export
+      if (format === "pdf") {
+        const pdf = await page.pdf({
+          printBackground: true,
+          width: `${dims.width}px`,
+          height: `${dims.height}px`,
+          margin: { top: "0", right: "0", bottom: "0", left: "0" },
+        });
+
+        await browser.close();
+
+        return new NextResponse(pdf as unknown as BodyInit, {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename="slide.pdf"`,
+          },
+        });
+      }
+
+      // Image export (png / jpg)
       const screenshot = await page.screenshot({
         type: format === "jpg" ? "jpeg" : "png",
         quality: format === "jpg" ? 90 : undefined,

@@ -1,16 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /**
-   * Ensure @sparticuz/chromium and puppeteer-core are available to the
-   * serverless function in production (e.g. on Vercel).
-   */
+  // Ensure @sparticuz/chromium-min and puppeteer-core are available
+  // to the serverless function bundle in production (e.g. on Vercel).
   experimental: {
-    serverComponentsExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
+    serverComponentsExternalPackages: ["@sparticuz/chromium-min", "puppeteer-core"],
   },
-  // Next.js also supports a non-experimental variant in some versions.
-  // Keeping both improves compatibility across Next releases.
-  // (Unknown keys are ignored.)
   serverExternalPackages: ["@sparticuz/chromium-min", "puppeteer-core"],
   /**
    * Make sure the Chromium package (including its /bin brotli files) is
@@ -20,7 +15,7 @@ const nextConfig: NextConfig = {
    * file path including extension (e.g. "app/api/export/route.ts").
    */
   outputFileTracingIncludes: {
-    "app/api/export/route.ts": ["./node_modules/@sparticuz/chromium/**"],
+    "app/api/export/route.ts": ["./node_modules/@sparticuz/chromium-min/**"],
   },
 };
 
