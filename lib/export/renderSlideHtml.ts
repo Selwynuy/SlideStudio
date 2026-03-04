@@ -1,13 +1,7 @@
 import { Slide, AspectRatio } from "@/types/slide";
 import { BG_PRESETS } from "@/lib/presets";
 import { calculateSlideLayout } from "./slideCalculations";
-
-function resolveFontFamily(key: string | undefined, fallback: "display" | "body"): string {
-  if (key === "jakarta") return "'Plus Jakarta Sans', sans-serif";
-  if (key === "mono") return "'JetBrains Mono', monospace";
-  if (key === "bebas") return "'Bebas Neue', sans-serif";
-  return fallback === "display" ? "'Bebas Neue', sans-serif" : "'Plus Jakarta Sans', sans-serif";
-}
+import { resolveFontFamily } from "@/lib/utils";
 
 function escapeHtml(text: string): string {
   return text

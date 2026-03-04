@@ -53,3 +53,15 @@ export function formatSlideNum(n: number): string {
 export function sanitizeFilename(name: string): string {
   return name.replace(/[^a-z0-9]/gi, "_").toLowerCase()
 }
+
+/**
+ * Maps a logical font key to a CSS font-family string.
+ * Used by both RenderedSlide (preview) and renderSlideHtml (export) to ensure consistency.
+ */
+export function resolveFontFamily(key: string | undefined, fallback: "display" | "body"): string {
+  if (key === "jakarta") return "'Plus Jakarta Sans', sans-serif";
+  if (key === "mono") return "'JetBrains Mono', monospace";
+  if (key === "bebas") return "'Bebas Neue', sans-serif";
+  // Default: bebas for titles, jakarta for body
+  return fallback === "display" ? "'Bebas Neue', sans-serif" : "'Plus Jakarta Sans', sans-serif";
+}
