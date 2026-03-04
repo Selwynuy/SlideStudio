@@ -1,18 +1,20 @@
-import { Slide } from '@/types/slide'
+import { Slide, AspectRatio } from '@/types/slide'
+
+export interface SlideshowSettings {
+  tone?: string
+  complexity?: string
+  maxSlides?: number
+  focus?: string
+  hook?: boolean
+  aspectRatio?: AspectRatio
+}
 
 export interface Slideshow {
   id: string
   title: string
   created_at: string
   updated_at: string
-  settings?: {
-    tone?: string
-    complexity?: string
-    maxSlides?: number
-    focus?: string
-    hook?: boolean
-    aspectRatio?: string
-  }
+  settings?: SlideshowSettings
 }
 
 export interface SlideRecord {
@@ -211,11 +213,4 @@ export function slidesFromRecords(records: SlideRecord[]): Slide[] {
   return records
     .sort((a, b) => a.order_index - b.order_index)
     .map(record => record.slide_data)
-}
-
-/**
- * Convert Slide array to format for saving
- */
-export function slidesToSaveFormat(slides: Slide[]): Slide[] {
-  return slides.map(slide => ({ ...slide }))
 }

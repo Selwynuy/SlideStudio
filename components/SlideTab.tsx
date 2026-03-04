@@ -1,7 +1,55 @@
 "use client";
 
 import { Slide } from "@/types/slide";
+import { cn } from "@/lib/utils";
+import {
+  SefField,
+  SefLabel,
+  SefTextarea,
+  AlignButtons,
+  ColorPresets,
+  FontRow,
+  RegenBtn,
+  EmptyState,
+} from "./editor-primitives";
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const TITLE_COLORS = [
+  { value: "#ffffff", title: "White" },
+  { value: "#000000", title: "Black" },
+  { value: "#fbbf24", title: "Amber" },
+  { value: "#00d4ff", title: "Cyan" },
+  { value: "#ff6b35", title: "Orange" },
+];
+
+const DESC_COLORS = [
+  { value: "#ffffff", title: "White" },
+  { value: "#d4d4d4", title: "Light grey" },
+  { value: "#a3a3a3", title: "Mid grey" },
+  { value: "#fbbf24", title: "Amber" },
+  { value: "#00d4ff", title: "Cyan" },
+];
+
+const TITLE_FONTS = [
+  { value: "bebas",   label: "Bebas Neue" },
+  { value: "jakarta", label: "Sans (Plus Jakarta)" },
+  { value: "mono",    label: "Mono (JetBrains)" },
+];
+
+const DESC_FONTS = [
+  { value: "jakarta", label: "Sans (Plus Jakarta)" },
+  { value: "bebas",   label: "Bebas Neue" },
+  { value: "mono",    label: "Mono (JetBrains)" },
+];
+
+const HOOK_SUGGESTIONS = [
+  "Stop scrolling if you want to…",
+  "The #1 mistake people make",
+  "Most people don't know this…",
+] as const;
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 interface SlideTabProps {
   slide: Slide | null;
@@ -22,356 +70,284 @@ export default function SlideTab({
 }: SlideTabProps) {
   if (!slide) {
     return (
-      <div id="slideEditorEmpty" className="empty-right">
-        <div className="empty-icon">◈</div>
-        <div className="empty-msg">
-          Select a slide from the left panel to edit its content.
-        </div>
-      </div>
+      <EmptyState message="Select a slide from the left panel to edit its content." />
     );
   }
 
-  // A helper function to handle updates
-  const handleChange = (field: keyof Slide, value: any) => {
+  const set = <K extends keyof Slide>(field: K, value: Slide[K]) =>
     updateSlide({ ...slide, [field]: value });
-  };
 
-  // Check if current slide is a hook
   const isHook = slide.type === "hook";
   const isTextMaster = textStyleMasterId === slide.id;
 
   return (
-    <div id="slideEditorContent" style={{ display: "flex", flexDirection: "column" }}>
-      <div className="slide-editor-field">
-        <div className="sef-label">
-          <span>SLIDE TYPE</span>
-        </div>
-        <div style={{ display: "flex", gap: "6px", marginBottom: "8px" }}>
-          <button
-            className={`btn btn-sm ${
-              slide.type === "normal" ? "btn-cyan" : "btn-ghost"
-            }`}
-            onClick={() => handleChange("type", "normal")}
-            style={{ flex: 1, justifyContent: "center" }}
+    <div id="slideEditorContent" className="flex flex-col flex-1 overflow-y-auto min-h-0">
+      {/* ── Slide type ─────────────────────────────────────────────────────── */}
+      <SefField>
+        <SefLabel>Slide Type</SefLabel>
+        <div className="flex gap-1.5 mb-2">
+          <TypeButton
+            active={slide.type === "normal"}
+            variant="normal"
+            onClick={() => set("type", "normal")}
           >
             Normal
-          </button>
-          <button
-            className={`btn btn-sm ${
-              slide.type === "hook" ? "btn-hook" : "btn-ghost"
-            }`}
-            onClick={() => handleChange("type", "hook")}
-            style={{ flex: 1, justifyContent: "center" }}
+          </TypeButton>
+          <TypeButton
+            active={slide.type === "hook"}
+            variant="hook"
+            onClick={() => set("type", "hook")}
           >
             Hook Opener
-          </button>
+          </TypeButton>
         </div>
-        {/* Removed the explanatory text as requested */}
-      </div>
+      </SefField>
 
-      <div className="slide-editor-field">
-        <div className="sef-label">
-          <span>TEXT ALIGNMENT</span>
-        </div>
-        <div className="align-btns">
-          <button className={`align-btn ${slide.align === 'left' ? 'active' : ''}`} onClick={() => handleChange('align', 'left')} title="Align Left">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="2" rx="1"/><rect x="3" y="11" width="12" height="2" rx="1"/><rect x="3" y="17" width="15" height="2" rx="1"/></svg>
-          </button>
-          <button className={`align-btn ${slide.align === 'center' ? 'active' : ''}`} onClick={() => handleChange('align', 'center')} title="Align Center">
-             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="2" rx="1"/><rect x="6" y="11" width="12" height="2" rx="1"/><rect x="4.5" y="17" width="15" height="2" rx="1"/></svg>
-          </button>
-          <button className={`align-btn ${slide.align === 'right' ? 'active' : ''}`} onClick={() => handleChange('align', 'right')} title="Align Right">
-             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="2" rx="1"/><rect x="9" y="11" width="12" height="2" rx="1"/><rect x="6" y="17" width="15" height="2" rx="1"/></svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Hook-specific eyebrow field - FIXED: Now properly displays and editable */}
-      {isHook && (
-        <div className="slide-editor-field">
-          <div className="sef-label">
-            <span style={{color:'var(--hook-color)'}}>EYEBROW TEXT</span> 
-            <span style={{fontSize:'9px',color:'var(--text-dim)'}}>{(slide.eyebrow || "").length}/20</span>
-          </div>
-          <input 
-            className="sef-input" 
-            value={slide.eyebrow || "STOP SCROLLING"} 
-            maxLength={20} 
-            onChange={e => handleChange('eyebrow', e.target.value)} 
-            placeholder="STOP SCROLLING"
-            style={{borderColor: 'rgba(255,107,53,0.3)'}}
-          />
-          <div style={{fontSize:'9px',color:'var(--text-dim)',marginTop:'4px'}}>
-            Small text above the hook (max 2-3 words)
-          </div>
-        </div>
-      )}
-      
-      {/* Title/Hook Line field */}
-      <div className="slide-editor-field">
-        <div className="sef-label">
-          {isHook ? (
-            <span style={{color:'var(--hook-color)'}}>HOOK LINE</span>
-          ) : (
-            <span>TITLE</span>
-          )} 
-          <span style={{fontSize:'9px',color:'var(--text-dim)'}}>{slide.title.length}/{isHook ? 60 : 80}</span>
-        </div>
-        <textarea 
-          className="sef-textarea" 
-          value={slide.title} 
-          maxLength={isHook ? 60 : 80} 
-          onChange={e => handleChange('title', e.target.value)} 
-          placeholder={isHook ? "Your powerful hook line (max 4-5 words)…" : "Punchy title (max 6 words)…"}
-          style={{
-            ...(isHook ? {borderColor: 'rgba(255,107,53,0.3)'} : {}),
-            minHeight: '48px',
-            fontWeight: 700,
-            fontSize: '13px',
-          }}
+      {/* ── Text alignment ─────────────────────────────────────────────────── */}
+      <SefField>
+        <SefLabel>Text Alignment</SefLabel>
+        <AlignButtons
+          value={slide.align}
+          onChange={(v) => set("align", v)}
         />
-        
-        {/* Hook-specific suggestions */}
+      </SefField>
+
+      {/* ── Hook eyebrow ────────────────────────────────────────────────────── */}
+      {isHook && (
+        <SefField>
+          <SefLabel
+            className="text-hook"
+            trailing={
+              <span className="text-[9px] text-text-subtle">
+                {(slide.eyebrow ?? "").length}/20
+              </span>
+            }
+          >
+            Eyebrow Text
+          </SefLabel>
+          <input
+            className={cn(
+              "w-full bg-secondary border border-hook/30 rounded-md",
+              "text-foreground font-sans text-[13px] font-bold",
+              "px-2.5 py-2 outline-none transition-colors",
+              "focus:border-hook/60"
+            )}
+            value={slide.eyebrow ?? "STOP SCROLLING"}
+            maxLength={20}
+            onChange={(e) => set("eyebrow", e.target.value)}
+            placeholder="STOP SCROLLING"
+          />
+          <p className="text-[9px] text-text-subtle mt-1">
+            Small text above the hook (max 2–3 words)
+          </p>
+        </SefField>
+      )}
+
+      {/* ── Title / Hook line ────────────────────────────────────────────────── */}
+      <SefField>
+        <SefLabel
+          className={isHook ? "text-hook" : undefined}
+          trailing={
+            <span className="text-[9px] text-text-subtle">
+              {slide.title.length}/{isHook ? 60 : 80}
+            </span>
+          }
+        >
+          {isHook ? "Hook Line" : "Title"}
+        </SefLabel>
+
+        <SefTextarea
+          value={slide.title}
+          maxLength={isHook ? 60 : 80}
+          onChange={(e) => set("title", e.target.value)}
+          placeholder={
+            isHook
+              ? "Your powerful hook line (max 4–5 words)…"
+              : "Punchy title (max 6 words)…"
+          }
+          isHook={isHook}
+          className="min-h-[48px] font-bold text-[13px]"
+        />
+
+        {/* Hook suggestion chips */}
         {isHook && (
-          <div style={{display:'flex',flexWrap:'wrap',gap:'4px',marginTop:'6px'}}>
-            <button 
-              className="suggestion-btn" 
-              onClick={() => handleChange('title', "Stop scrolling if you want to…")}
-              style={{fontSize:'9px',padding:'2px 6px',background:'rgba(255,107,53,0.1)',border:'1px solid rgba(255,107,53,0.2)',borderRadius:'4px',color:'var(--hook-color)'}}
-            >
-              Stop scrolling…
-            </button>
-            <button 
-              className="suggestion-btn" 
-              onClick={() => handleChange('title', "The #1 mistake people make")}
-              style={{fontSize:'9px',padding:'2px 6px',background:'rgba(255,107,53,0.1)',border:'1px solid rgba(255,107,53,0.2)',borderRadius:'4px',color:'var(--hook-color)'}}
-            >
-              The #1 mistake…
-            </button>
-            <button 
-              className="suggestion-btn" 
-              onClick={() => handleChange('title', "Most people don't know this…")}
-              style={{fontSize:'9px',padding:'2px 6px',background:'rgba(255,107,53,0.1)',border:'1px solid rgba(255,107,53,0.2)',borderRadius:'4px',color:'var(--hook-color)'}}
-            >
-              Most people don't know…
-            </button>
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {HOOK_SUGGESTIONS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => set("title", s)}
+                className={cn(
+                  "text-[9px] px-1.5 py-[2px] rounded cursor-pointer",
+                  "bg-hook/10 border border-hook/20 text-hook transition-all",
+                  "hover:bg-hook/20"
+                )}
+              >
+                {s.substring(0, 18)}…
+              </button>
+            ))}
           </div>
         )}
-        
-        <div style={{display:'flex',alignItems:'center',gap:'8px',marginTop:'8px'}}>
-          <label style={{fontFamily:'"JetBrains Mono",monospace',fontSize:'9px',letterSpacing:'1px',textTransform:'uppercase',color:'var(--text-muted)'}}>COLOR</label>
-          <input type="color" value={slide.titleColor} onChange={e => handleChange('titleColor', e.target.value)} title="Title text color"/>
-          <div style={{display:'flex',gap:'4px'}}>
-            <button className="color-preset-btn" style={{background:'#ffffff'}} onClick={() => handleChange('titleColor', '#ffffff')} title="White"></button>
-            <button className="color-preset-btn" style={{background:'#000000',borderColor:'#555'}} onClick={() => handleChange('titleColor', '#000000')} title="Black"></button>
-            <button className="color-preset-btn" style={{background:'#fbbf24'}} onClick={() => handleChange('titleColor', '#fbbf24')} title="Amber"></button>
-            <button className="color-preset-btn" style={{background:'#00d4ff'}} onClick={() => handleChange('titleColor', '#00d4ff')} title="Cyan"></button>
-            <button className="color-preset-btn" style={{background:'#ff6b35'}} onClick={() => handleChange('titleColor', '#ff6b35')} title="Orange"></button>
-          </div>
-        </div>
 
-        <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{
-                display: "block",
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "9px",
-                letterSpacing: "1px",
-                textTransform: "uppercase",
-                color: "var(--text-muted)",
-                marginBottom: "4px",
-              }}
-            >
-              Font
-            </label>
-            <select
-              className="ctrl-select"
-              value={slide.titleFontFamily || "bebas"}
-              onChange={(e) =>
-                handleChange("titleFontFamily", e.target.value as any)
-              }
-            >
-              <option value="bebas">Bebas Neue</option>
-              <option value="jakarta">Sans (Plus Jakarta)</option>
-              <option value="mono">Mono (JetBrains)</option>
-            </select>
-          </div>
-          <div style={{ width: "72px" }}>
-            <label
-              style={{
-                display: "block",
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "9px",
-                letterSpacing: "1px",
-                textTransform: "uppercase",
-                color: "var(--text-muted)",
-                marginBottom: "4px",
-              }}
-            >
-              Size
-            </label>
-            <input
-              type="number"
-              min={16}
-              max={72}
-              className="ctrl-input"
-              value={slide.titleFontSize ?? 30}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                if (!Number.isNaN(value)) {
-                  handleChange("titleFontSize", value);
-                }
-              }}
-            />
-          </div>
-        </div>
-      </div>
+        {/* Title colour + font */}
+        <ColorRow
+          label="Color"
+          colorValue={slide.titleColor}
+          onColorChange={(v) => set("titleColor", v)}
+          presets={TITLE_COLORS}
+        />
+        <FontRow
+          fontValue={slide.titleFontFamily ?? "bebas"}
+          sizeValue={slide.titleFontSize ?? 30}
+          onFontChange={(v) => set("titleFontFamily", v as Slide["titleFontFamily"])}
+          onSizeChange={(v) => set("titleFontSize", v)}
+          minSize={16}
+          maxSize={72}
+          fontOptions={TITLE_FONTS}
+        />
+      </SefField>
 
-      {/* Description field - FIXED: Now editable for normal slides, shows preview for hooks */}
-      <div className="slide-editor-field">
-        <div className="sef-label">
-          {isHook ? (
-            <>
-              <span>DESCRIPTION</span>
-            </>
-          ) : (
-            <span>DESCRIPTION</span>
-          )}
-          <span style={{fontSize:'9px',color:'var(--text-dim)',marginLeft:'auto'}}>{slide.description.length}/300</span>
-        </div>
-        <textarea 
-          className="sef-textarea" 
-          value={slide.description} 
-          maxLength={300} 
-          onChange={e => handleChange('description', e.target.value)} 
-          placeholder={isHook ? "Description won't appear on hook slides (just for reference)" : "1–3 sentences…"}
-          style={isHook ? {background:'rgba(0,0,0,0.05)',borderColor:'rgba(255,255,255,0.1)'} : {}}
-          disabled={false}  
-        ></textarea>
-        
+      {/* ── Description ─────────────────────────────────────────────────────── */}
+      <SefField>
+        <SefLabel
+          trailing={
+            <span className="text-[9px] text-text-subtle ml-auto">
+              {slide.description.length}/300
+            </span>
+          }
+        >
+          Description
+        </SefLabel>
+
+        <SefTextarea
+          value={slide.description}
+          maxLength={300}
+          onChange={(e) => set("description", e.target.value)}
+          placeholder={
+            isHook
+              ? "Description won't appear on hook slides (just for reference)"
+              : "1–3 sentences…"
+          }
+          className={isHook ? "bg-black/5 border-white/10" : undefined}
+        />
+
         {isHook && (
-          <div style={{fontSize:'9px',color:'var(--text-dim)',marginTop:'4px'}}>
-            Hook slides show only the eyebrow and hook line for maximum impact. 
+          <p className="text-[9px] text-text-subtle mt-1">
+            Hook slides show only the eyebrow and hook line for maximum impact.
             Description is saved but not displayed.
-          </div>
+          </p>
         )}
-        
-        <div style={{display:'flex',alignItems:'center',gap:'8px',marginTop:'8px'}}>
-          <label style={{fontFamily:'"JetBrains Mono",monospace',fontSize:'9px',letterSpacing:'1px',textTransform:'uppercase',color:'var(--text-muted)'}}>COLOR</label>
-          <input type="color" value={slide.descColor} onChange={e => handleChange('descColor', e.target.value)} title="Description text color"/>
-          <div style={{display:'flex',gap:'4px'}}>
-            <button className="color-preset-btn" style={{background:'#ffffff'}} onClick={() => handleChange('descColor', '#ffffff')} title="White"></button>
-            <button className="color-preset-btn" style={{background:'#d4d4d4'}} onClick={() => handleChange('descColor', '#d4d4d4')} title="Light grey"></button>
-            <button className="color-preset-btn" style={{background:'#a3a3a3'}} onClick={() => handleChange('descColor', '#a3a3a3')} title="Mid grey"></button>
-            <button className="color-preset-btn" style={{background:'#fbbf24'}} onClick={() => handleChange('descColor', '#fbbf24')} title="Amber"></button>
-            <button className="color-preset-btn" style={{background:'#00d4ff'}} onClick={() => handleChange('descColor', '#00d4ff')} title="Cyan"></button>
-          </div>
-        </div>
 
-        <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{
-                display: "block",
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "9px",
-                letterSpacing: "1px",
-                textTransform: "uppercase",
-                color: "var(--text-muted)",
-                marginBottom: "4px",
-              }}
-            >
-              Font
-            </label>
-            <select
-              className="ctrl-select"
-              value={slide.descFontFamily || "jakarta"}
-              onChange={(e) =>
-                handleChange("descFontFamily", e.target.value as any)
-              }
-            >
-              <option value="jakarta">Sans (Plus Jakarta)</option>
-              <option value="bebas">Bebas Neue</option>
-              <option value="mono">Mono (JetBrains)</option>
-            </select>
-          </div>
-          <div style={{ width: "72px" }}>
-            <label
-              style={{
-                display: "block",
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: "9px",
-                letterSpacing: "1px",
-                textTransform: "uppercase",
-                color: "var(--text-muted)",
-                marginBottom: "4px",
-              }}
-            >
-              Size
-            </label>
-            <input
-              type="number"
-              min={8}
-              max={28}
-              className="ctrl-input"
-              value={slide.descFontSize ?? 10}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                if (!Number.isNaN(value)) {
-                  handleChange("descFontSize", value);
-                }
-              }}
-            />
-          </div>
-        </div>
-      </div>
+        <ColorRow
+          label="Color"
+          colorValue={slide.descColor}
+          onColorChange={(v) => set("descColor", v)}
+          presets={DESC_COLORS}
+        />
+        <FontRow
+          fontValue={slide.descFontFamily ?? "jakarta"}
+          sizeValue={slide.descFontSize ?? 10}
+          onFontChange={(v) => set("descFontFamily", v as Slide["descFontFamily"])}
+          onSizeChange={(v) => set("descFontSize", v)}
+          minSize={8}
+          maxSize={28}
+          fontOptions={DESC_FONTS}
+        />
+      </SefField>
 
-      {/* Apply text styles to all slides */}
-      <div className="regen-strip" style={{ marginTop: "4px" }}>
-        <button
-          className="regen-btn"
-          onClick={applyTextStyleToAll}
-          title="Apply alignment and text colors to all slides"
-        >
+      {/* ── Apply to all / text master ───────────────────────────────────────── */}
+      <div className="flex gap-1.5 px-3.5 py-2 border-b border-border">
+        <RegenBtn onClick={applyTextStyleToAll} title="Apply alignment and text colours to all slides" className="flex-1">
           Apply text styles to all
-        </button>
+        </RegenBtn>
       </div>
 
-      {/* Always apply settings (text master) */}
-      <div className="slide-editor-field" style={{ marginTop: "4px" }}>
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-            fontSize: "11px",
-            color: "var(--text-muted)",
-            cursor: "pointer",
-          }}
-        >
+      <SefField>
+        <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
           <input
             type="checkbox"
             checked={isTextMaster}
-            onChange={(e) =>
-              setTextStyleMasterId(e.target.checked ? slide.id : null)
-            }
+            onChange={(e) => setTextStyleMasterId(e.target.checked ? slide.id : null)}
+            className="accent-primary"
           />
-          <span>Always apply these text settings</span>
+          Always apply these text settings
         </label>
-      </div>
+      </SefField>
 
-      {/* Regenerate buttons */}
-      <div className="regen-strip">
-        <button className="regen-btn" onClick={() => regenField('title')} style={isHook ? {borderColor:'rgba(255,107,53,0.3)'} : {}}>
-          {isHook ? '↻ Generate New Hook' : '↻ Title'}
-        </button>
-        <button className="regen-btn" onClick={() => regenField('description')} style={isHook ? {borderColor:'rgba(255,107,53,0.3)'} : {}}>
-          {isHook ? '↻ Generate Desc' : '↻ Desc'}
-        </button>
-        <button className="regen-btn" onClick={() => regenField('both')} style={isHook ? {borderColor:'rgba(255,107,53,0.3)'} : {}}>
-          {isHook ? '↻ Regenerate Both' : '↻ Both'}
-        </button>
+      {/* ── Regen buttons ────────────────────────────────────────────────────── */}
+      <div className="flex gap-1.5 px-3.5 py-2">
+        <RegenBtn isHook={isHook} onClick={() => regenField("title")}>
+          {isHook ? "↻ New Hook" : "↻ Title"}
+        </RegenBtn>
+        <RegenBtn isHook={isHook} onClick={() => regenField("description")}>
+          {isHook ? "↻ Desc" : "↻ Desc"}
+        </RegenBtn>
+        <RegenBtn isHook={isHook} onClick={() => regenField("both")}>
+          ↻ Both
+        </RegenBtn>
+      </div>
+    </div>
+  );
+}
+
+// ── Local helpers ─────────────────────────────────────────────────────────────
+
+interface TypeButtonProps {
+  active: boolean;
+  variant: "normal" | "hook";
+  onClick: () => void;
+  children: React.ReactNode;
+}
+
+function TypeButton({ active, variant, onClick, children }: TypeButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex-1 flex items-center justify-center px-2.5 py-[5px]",
+        "rounded-[5px] text-[11px] font-semibold cursor-pointer transition-all",
+        variant === "normal" && active && "bg-primary text-primary-foreground font-bold",
+        variant === "normal" && !active && "bg-transparent text-muted-foreground border border-border-strong hover:bg-secondary hover:text-foreground",
+        variant === "hook" && active && "bg-hook/12 text-hook border border-hook/25",
+        variant === "hook" && !active && "bg-transparent text-muted-foreground border border-border-strong hover:bg-secondary hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+interface ColorRowProps {
+  label: string;
+  colorValue: string;
+  onColorChange: (v: string) => void;
+  presets: { value: string; title: string }[];
+}
+
+function ColorRow({ label, colorValue, onColorChange, presets }: ColorRowProps) {
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      <label className="font-mono text-[9px] tracking-[1px] uppercase text-muted-foreground">
+        {label}
+      </label>
+      <input
+        type="color"
+        value={colorValue}
+        onChange={(e) => onColorChange(e.target.value)}
+        title={`${label} colour`}
+      />
+      <div className="flex gap-1">
+        {presets.map(({ value, title }) => (
+          <button
+            key={value}
+            type="button"
+            title={title}
+            onClick={() => onColorChange(value)}
+            className="w-[18px] h-[18px] rounded-full cursor-pointer shrink-0 transition-transform hover:scale-125 border-2 border-white/15 hover:border-white/50 p-0"
+            style={{ background: value }}
+          />
+        ))}
       </div>
     </div>
   );

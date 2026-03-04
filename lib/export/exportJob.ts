@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import { Slide, AspectRatio } from "@/types/slide";
 import type { ExportRootHandle } from "@/components/ExportRoot";
+import { sanitizeFilename } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,9 +53,7 @@ export async function runExportJob(opts: ExportJobOptions): Promise<void> {
     onProgress,
   } = opts;
 
-  const sanitizedTitle = slideshowTitle
-    .replace(/[^a-z0-9]/gi, "_")
-    .toLowerCase();
+  const sanitizedTitle = sanitizeFilename(slideshowTitle);
 
   const collectedBlobs: { blob: Blob; filename: string }[] = [];
 

@@ -7,20 +7,27 @@ import SlideTab from "./SlideTab";
 import BgTab from "./BgTab";
 import ExportTab from "./ExportTab";
 import SlidesTab from "./SlidesTab";
+import { cn } from "@/lib/utils";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export type EditorTabId = "input" | "slide" | "bg" | "export" | "slides";
+
+export interface GenerationSettings {
+  rawText: string;
+  tone: string;
+  complexity: string;
+  maxSlides: number;
+  focus: string;
+  hook: boolean;
+}
 
 interface EditorPanelProps {
   slide: Slide | null;
   updateSlide: (updated: Slide) => void;
   generateSlides: (isBatch: boolean) => Promise<void>;
   isLoading: boolean;
-  settings: {
-    rawText: string;
-    tone: string;
-    complexity: string;
-    maxSlides: number;
-    focus: string;
-    hook: boolean;
-  };
+  settings: GenerationSettings;
   setRawText: (value: string) => void;
   setTone: (value: string) => void;
   setComplexity: (value: string) => void;
@@ -37,12 +44,12 @@ interface EditorPanelProps {
   onMoveSlide: (index: number, direction: "up" | "down") => void;
   onDeleteSlide: (index: number) => void;
   exportJson: () => void;
-  exportAll: (format: 'png' | 'jpg', asZip?: boolean) => void;
-  exportSelected: (indices: number[], format: 'png' | 'jpg', asZip?: boolean) => void;
+  exportAll: (format: "png" | "jpg", asZip?: boolean) => void;
+  exportSelected: (indices: number[], format: "png" | "jpg", asZip?: boolean) => void;
   applyTextStyleToAll: () => void;
   applyBgToAll: () => void;
-  activeTab: "input" | "slide" | "bg" | "export" | "slides";
-  setActiveTab: (tab: "input" | "slide" | "bg" | "export" | "slides") => void;
+  activeTab: EditorTabId;
+  setActiveTab: (tab: EditorTabId) => void;
   textStyleMasterId: string | null;
   setTextStyleMasterId: (id: string | null) => void;
   bgStyleMasterId: string | null;
@@ -51,6 +58,23 @@ interface EditorPanelProps {
   setEditorOpen: (open: boolean) => void;
   aspectRatio?: "9:16" | "1:1" | "4:3";
 }
+
+// ── Tab definitions ───────────────────────────────────────────────────────────
+
+function buildTabs(showSlidesTab: boolean): { id: EditorTabId; label: string }[] {
+  const base: { id: EditorTabId; label: string }[] = [
+    { id: "input", label: "INPUT" },
+    { id: "slide", label: "SLIDE" },
+    { id: "bg",    label: "BG" },
+    { id: "export", label: "EXPORT" },
+  ];
+  if (showSlidesTab) {
+    base.splice(1, 0, { id: "slides", label: "SLIDES" });
+  }
+  return base;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function EditorPanel({
   slide,
@@ -101,76 +125,87 @@ export default function EditorPanel({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const panelContent = (
+  const tabs = buildTabs(isTabletOrSmaller);
+
+  return (
     <>
+      {/* Mobile backdrop */}
       {isMobile && editorOpen && (
         <div
-          className="editor-overlay-backdrop"
+          className="fixed inset-0 bg-black/50 z-[99]"
           onClick={() => setEditorOpen(false)}
         />
       )}
-      <div className={`${isMobile ? "editor-overlay" : ""} panel-right ${isMobile && editorOpen ? "open" : ""}`} style={isTabletOrSmaller && !isMobile ? { display: 'flex', flexDirection: 'column' } : {}}>
+
+      {/* Panel shell */}
+      <div
+        className={cn(
+          "flex flex-col bg-card overflow-hidden min-h-0 flex-1",
+          "border-l border-border",
+          // Mobile: fixed bottom sheet
+          isMobile && [
+            "fixed bottom-0 left-0 right-0 z-[100] h-[40vh]",
+            "rounded-t-2xl border-l-0 border-t border-border",
+            "shadow-[0_-4px_24px_rgba(0,0,0,0.4)]",
+            "transition-transform duration-300",
+            editorOpen ? "translate-y-0" : "translate-y-full",
+          ]
+        )}
+      >
+        {/* Mobile close affordance */}
         {isMobile && (
           <button
-            className="editor-overlay-close"
-            onClick={() => setEditorOpen(false)}
+            type="button"
             aria-label="Close editor"
+            onClick={() => setEditorOpen(false)}
+            className={cn(
+              "absolute top-2 right-3 text-[22px] bg-transparent border-none",
+              "text-foreground cursor-pointer z-10"
+            )}
           >
             ×
           </button>
         )}
-      <div className={`tabs${isTabletOrSmaller ? " has-slides-tab" : ""}`}>
-        <div
-          className={`tab ${activeTab === "input" ? "active" : ""}`}
-          onClick={() => setActiveTab("input")}
-        >
-          INPUT
-        </div>
-        {isTabletOrSmaller && (
-          <div
-            className={`tab ${activeTab === "slides" ? "active" : ""}`}
-            onClick={() => setActiveTab("slides")}
-          >
-            SLIDES
-          </div>
-        )}
-        <div
-          className={`tab ${activeTab === "slide" ? "active" : ""}`}
-          onClick={() => setActiveTab("slide")}
-        >
-          SLIDE
-        </div>
-        <div
-          className={`tab ${activeTab === "bg" ? "active" : ""}`}
-          onClick={() => setActiveTab("bg")}
-        >
-          BG
-        </div>
-        <div
-          className={`tab ${activeTab === "export" ? "active" : ""}`}
-          onClick={() => setActiveTab("export")}
-        >
-          EXPORT
-        </div>
-      </div>
 
-      {activeTab === "input" && (
-        <InputTab
-          generateSlides={generateSlides}
-          isLoading={isLoading}
-          settings={settings}
-          setRawText={setRawText}
-          setTone={setTone}
-          setComplexity={setComplexity}
-          setMaxSlides={setMaxSlides}
-          setFocus={setFocus}
-          setHook={setHook}
-          sourceText={sourceText}
-          batchOffset={batchOffset}
-        />
-      )}
-      {activeTab === "slide" && (
-        <div className="tab-pane active" id="tab-slide">
+        {/* Tab bar */}
+        <div className="flex border-b border-border shrink-0">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setActiveTab(t.id)}
+              className={cn(
+                "flex-1 py-2.5 px-1 text-[10px] font-bold font-mono",
+                "tracking-[1px] uppercase text-center cursor-pointer",
+                "border-b-2 transition-all bg-transparent border-none",
+                isTabletOrSmaller && "text-[9px] py-2 tracking-[0.5px]",
+                activeTab === t.id
+                  ? "text-primary border-primary"
+                  : "text-muted-foreground border-transparent hover:text-foreground"
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        {activeTab === "input" && (
+          <InputTab
+            generateSlides={generateSlides}
+            isLoading={isLoading}
+            settings={settings}
+            setRawText={setRawText}
+            setTone={setTone}
+            setComplexity={setComplexity}
+            setMaxSlides={setMaxSlides}
+            setFocus={setFocus}
+            setHook={setHook}
+            sourceText={sourceText}
+            batchOffset={batchOffset}
+          />
+        )}
+        {activeTab === "slide" && (
           <SlideTab
             slide={slide}
             updateSlide={updateSlide}
@@ -179,10 +214,8 @@ export default function EditorPanel({
             textStyleMasterId={textStyleMasterId}
             setTextStyleMasterId={setTextStyleMasterId}
           />
-        </div>
-      )}
-      {activeTab === "bg" && (
-        <div className="tab-pane active" id="tab-bg">
+        )}
+        {activeTab === "bg" && (
           <BgTab
             slide={slide}
             updateSlide={updateSlide}
@@ -190,30 +223,27 @@ export default function EditorPanel({
             bgStyleMasterId={bgStyleMasterId}
             setBgStyleMasterId={setBgStyleMasterId}
           />
-        </div>
-      )}
-      {activeTab === "export" && (
-        <ExportTab
-          slides={slides}
-          exportJson={exportJson}
-          exportAll={exportAll}
-          exportSelected={exportSelected}
-          aspectRatio={aspectRatio}
-        />
-      )}
-      {activeTab === "slides" && isTabletOrSmaller && (
-        <SlidesTab
-          slides={slides}
-          activeIdx={activeIdx}
-          setActiveIdx={setActiveIdx}
-          onAddSlide={onAddSlide}
-          onMoveSlide={onMoveSlide}
-          onDeleteSlide={onDeleteSlide}
-        />
-      )}
+        )}
+        {activeTab === "export" && (
+          <ExportTab
+            slides={slides}
+            exportJson={exportJson}
+            exportAll={exportAll}
+            exportSelected={exportSelected}
+            aspectRatio={aspectRatio}
+          />
+        )}
+        {activeTab === "slides" && isTabletOrSmaller && (
+          <SlidesTab
+            slides={slides}
+            activeIdx={activeIdx}
+            setActiveIdx={setActiveIdx}
+            onAddSlide={onAddSlide}
+            onMoveSlide={onMoveSlide}
+            onDeleteSlide={onDeleteSlide}
+          />
+        )}
       </div>
     </>
   );
-
-  return panelContent;
 }

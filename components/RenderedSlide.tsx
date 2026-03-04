@@ -3,6 +3,7 @@
 import { Slide, AspectRatio, ASPECT_RATIO_DIMENSIONS } from "@/types/slide";
 import { BG_PRESETS } from "@/lib/presets";
 import React from "react";
+import { cn } from "@/lib/utils";
 
 interface RenderedSlideProps {
   slide: Slide;
@@ -10,145 +11,173 @@ interface RenderedSlideProps {
   slideIndex?: number;
 }
 
-// Base frame dimensions (matches Preview.tsx phone frame)
+// Base frame dimensions — must match Preview.tsx phone frame constants.
 const BASE_FRAME_WIDTH = 300;
 const BASE_FRAME_HEIGHT = 650;
+
+/** Maps a logical font key to a CSS font-family string. */
+function resolveFontFamily(key: string | undefined, fallback: "display" | "body"): string {
+  if (key === "jakarta") return "'Plus Jakarta Sans', sans-serif";
+  if (key === "mono")    return "'JetBrains Mono', monospace";
+  if (key === "bebas")   return "'Bebas Neue', sans-serif";
+  // Default: bebas for titles, jakarta for body
+  return fallback === "display" ? "'Bebas Neue', sans-serif" : "'Plus Jakarta Sans', sans-serif";
+}
 
 const RenderedSlide = React.forwardRef<HTMLDivElement, RenderedSlideProps>(
   ({ slide, aspectRatio = "9:16", slideIndex }, ref) => {
     const dims = ASPECT_RATIO_DIMENSIONS[aspectRatio];
 
-    const bgStyle = slide.bgImage
-      ? { backgroundImage: `url(${slide.bgImage})`, opacity: (slide.imageOpacity ?? 100) / 100 }
-      : { background: BG_PRESETS[slide.bgPresetIdx]?.css || "#111" };
-
-    const overlayStyle = {
-      backgroundColor: slide.overlayColor,
-      opacity: slide.overlayOpacity / 100,
-    };
-
-    // --- Scale ratio: maps CSS base px values (designed for ~300px preview) to export canvas px ---
-    // Calculate how the slide fits inside the phone frame (same letterbox logic as Preview.tsx)
+    // ── Scale ratio: maps CSS "preview px" values to export canvas px ────────
+    // Calculate how the slide fits inside the phone frame (same letterbox logic as Preview.tsx).
     const frameAspect = BASE_FRAME_WIDTH / BASE_FRAME_HEIGHT;
     const slideAspect = dims.width / dims.height;
-
-    let slideRenderWidth: number;
-    if (slideAspect > frameAspect) {
-      slideRenderWidth = BASE_FRAME_WIDTH; // fit to frame width
-    } else {
-      slideRenderWidth = BASE_FRAME_HEIGHT * slideAspect; // fit to frame height
-    }
-
-    // scaleRatio: how much larger the export canvas is vs the preview render
+    const slideRenderWidth =
+      slideAspect > frameAspect ? BASE_FRAME_WIDTH : BASE_FRAME_HEIGHT * slideAspect;
     const scaleRatio = dims.width / slideRenderWidth;
 
-    // --- Font sizes (base values = user-facing "preview px") ---
-    const baseTitleSize = slide.titleFontSize ?? 30;
-    const baseDescSize = slide.descFontSize ?? 9.5;
+    // ── Scaled values ─────────────────────────────────────────────────────────
+    const titleSize       = (slide.titleFontSize ?? 30) * scaleRatio;
+    const descSize        = (slide.descFontSize  ?? 9.5) * scaleRatio;
+    const numSize         = 7  * scaleRatio;
+    const numMarginBottom = 6  * scaleRatio;
+    const titleMarginBottom = 4  * scaleRatio;
+    const dividerWidth    = 30 * scaleRatio;
+    const dividerHeight   = 2  * scaleRatio;
+    const dividerMarginV  = 24 * scaleRatio;
 
-    const exportTitleSize = baseTitleSize * scaleRatio;
-    const exportDescSize = baseDescSize * scaleRatio;
+    // ── Background layer ──────────────────────────────────────────────────────
+    const bgStyle: React.CSSProperties = slide.bgImage
+      ? { backgroundImage: `url(${slide.bgImage})`, opacity: (slide.imageOpacity ?? 100) / 100 }
+      : { background: BG_PRESETS[slide.bgPresetIdx]?.css ?? "#111" };
 
+    // ── Content alignment ─────────────────────────────────────────────────────
+    const alignClass = {
+      left:   "items-start text-left",
+      center: "items-center text-center",
+      right:  "items-end text-right",
+    }[slide.align] ?? "items-center text-center";
 
-
-    // .sld-title: margin-bottom: 4px
-    const exportTitleMarginBottom = 4 * scaleRatio;
-
-    // .sld-divider: width: 30px; height: 2px; margin: 8px 0
-    const exportDividerWidth = 30 * scaleRatio;
-    const exportDividerHeight = 2 * scaleRatio;
-    const exportDividerMarginV = 24 * scaleRatio;
-
-    // .sld-num: font-size: 7px; margin-bottom: 6px
-    const exportNumSize = 7 * scaleRatio;
-    const exportNumMarginBottom = 6 * scaleRatio;
-
-    // .sld-hook-eyebrow: uses base CSS values from globals.css (no export scaling)
-
-    // --- Font families ---
-    const titleFontFamily =
-      slide.titleFontFamily === "jakarta"
-        ? "'Plus Jakarta Sans', sans-serif"
-        : slide.titleFontFamily === "mono"
-        ? "'JetBrains Mono', monospace"
-        : "'Bebas Neue', sans-serif";
-
-    const descFontFamily =
-      slide.descFontFamily === "bebas"
-        ? "'Bebas Neue', sans-serif"
-        : slide.descFontFamily === "mono"
-        ? "'JetBrains Mono', monospace"
-        : "'Plus Jakarta Sans', sans-serif";
+    const dividerSelfAlign = {
+      left:   "self-start",
+      center: "self-center",
+      right:  "self-end",
+    }[slide.align];
 
     return (
       <div
         ref={ref}
-        style={{
-          width: dims.width,
-          height: dims.height,
-        }}
+        style={{ width: dims.width, height: dims.height }}
       >
-        <div
-          className="slide-render"
-          style={{ width: "100%", height: "100%"}}
-        >
+        {/* Slide canvas */}
+        <div className="relative w-full h-full">
+          {/* Background */}
           <div
-            className="slide-bg-layer"
+            data-layer="bg"
+            className="absolute inset-0 bg-cover bg-center transition-colors duration-300"
             style={{ ...bgStyle, position: "absolute", inset: 0 }}
           />
+
+          {/* Colour overlay (readability) */}
           <div
-            className="slide-overlay-layer"
-            style={{ ...overlayStyle, position: "absolute", inset: 0 }}
+            className="absolute inset-0"
+            style={{
+              backgroundColor: slide.overlayColor,
+              opacity: slide.overlayOpacity / 100,
+            }}
           />
+
+          {/* Content layer — respects TikTok safe area */}
           <div
-            className={`slide-content-layer align-${slide.align}`}
+            className={cn(
+              "absolute z-10 flex flex-col justify-center",
+              alignClass
+            )}
+            style={{
+              top: "8%",
+              bottom: "22%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "76%",
+              padding: `${10 * scaleRatio}px ${8 * scaleRatio}px`,
+            }}
           >
+            {/* Hook eyebrow */}
             {slide.type === "hook" && (
-              <div className="sld-hook-eyebrow">
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: `20px`,
+                  letterSpacing: `${2 * scaleRatio}px`,
+                  borderRadius: `${3 * scaleRatio}px`,
+                  background: "rgba(255,107,53,0.25)",
+                  color: "#ffaa80",
+                  border: "1px solid rgba(255,107,53,0.35)",
+                  padding: `20px`,
+                }}
+              >
                 {slide.eyebrow || "STOP SCROLLING →"}
               </div>
             )}
+
+            {/* Slide number */}
             <div
-              className="sld-num"
               style={{
-                fontSize: `${exportNumSize}px`,
-                marginBottom: `${exportNumMarginBottom}px`,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: `${numSize}px`,
+                color: "rgba(255,255,255,0.25)",
+                letterSpacing: `${2 * scaleRatio}px`,
+                marginBottom: `${numMarginBottom}px`,
               }}
             >
               {slideIndex !== undefined
                 ? String(slideIndex + 1).padStart(2, "0")
                 : String(slide.id).padStart(2, "0")}
             </div>
+
+            {/* Title */}
             <div
-              className="sld-title"
               style={{
+                fontFamily: resolveFontFamily(slide.titleFontFamily, "display"),
+                fontSize: `${titleSize}px`,
+                lineHeight: slide.type === "hook" ? 0.95 : 1.0,
                 color: slide.titleColor,
-                fontSize: `${exportTitleSize}px`,
-                fontFamily: titleFontFamily,
-                marginBottom: `${exportTitleMarginBottom}px`,
+                textShadow: `0 ${2 * scaleRatio}px ${16 * scaleRatio}px rgba(0,0,0,0.7)`,
+                marginBottom: `${titleMarginBottom}px`,
+                letterSpacing: `${1.5 * scaleRatio}px`,
+                whiteSpace: "pre-wrap",
               }}
             >
               {slide.title}
             </div>
-            {slide.dividerEnabled ?? true ? (
+
+            {/* Divider */}
+            {(slide.dividerEnabled ?? true) && (
               <div
-                className="sld-divider"
+                className={dividerSelfAlign}
                 style={{
                   background: slide.accentColor,
-                  width: `${exportDividerWidth}px`,
-                  height: `${exportDividerHeight}px`,
-                  margin: `${exportDividerMarginV}px 0`,
-                  borderRadius: exportDividerHeight / 2,
+                  width: `${dividerWidth}px`,
+                  height: `${dividerHeight}px`,
+                  borderRadius: dividerHeight / 2,
+                  margin: `${dividerMarginV}px 0`,
+                  flexShrink: 0,
                 }}
               />
-            ) : null}
+            )}
+
+            {/* Description */}
             <div
-              className="sld-desc"
               style={{
+                fontFamily: resolveFontFamily(slide.descFontFamily, "body"),
+                fontSize: `${descSize}px`,
+                lineHeight: 1.6,
                 color: slide.descColor,
-                fontSize: `${exportDescSize}px`,
-                lineHeight: "1.6",
-                fontFamily: descFontFamily,
+                textShadow: `0 ${scaleRatio}px ${8 * scaleRatio}px rgba(0,0,0,0.6)`,
+                maxHeight: "100%",
+                wordWrap: "break-word",
+                overflowWrap: "break-word",
+                whiteSpace: "pre-wrap",
               }}
             >
               {slide.description}

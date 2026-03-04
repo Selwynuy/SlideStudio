@@ -138,7 +138,7 @@ const ExportRoot = forwardRef<ExportRootHandle, {}>(
 
           // ⑥ Also preload any background-image that ended up in the DOM
           const bgLayer = element.querySelector(
-            ".slide-bg-layer"
+            "[data-layer='bg']"
           ) as HTMLElement | null;
           if (bgLayer) {
             const bgCss = window.getComputedStyle(bgLayer).backgroundImage;

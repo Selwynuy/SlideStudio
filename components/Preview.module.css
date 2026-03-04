@@ -1,0 +1,29 @@
+/*
+ * Minimal CSS module for Preview.tsx
+ * Only contains styles that cannot be expressed as Tailwind utility classes:
+ *   – pseudo-element ::before (phone side button)
+ *   – the tiktok disc spin animation
+ */
+
+/* Phone side/power button — right edge decorative element */
+.phoneFrame::before {
+  content: '';
+  position: absolute;
+  right: -10px;
+  top: 100px;
+  width: 3px;
+  height: 60px;
+  background: #2a2a2a;
+  border-radius: 0 2px 2px 0;
+  z-index: 40;
+}
+
+/* TikTok disc vinyl spin */
+.tiktokDisc {
+  animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

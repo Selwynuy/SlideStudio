@@ -47,5 +47,8 @@ export async function verifySlideOwnership(slideId: string): Promise<boolean> {
     .single()
 
   if (!data) return false
-  return (data.slideshows as any).user_id === user.id
+  // The !inner join can return either an object or array depending on the Supabase client version
+  const joined = data.slideshows as { user_id: string } | { user_id: string }[] | null
+  const slideshowUserId = Array.isArray(joined) ? joined[0]?.user_id : joined?.user_id
+  return slideshowUserId === user.id
 }

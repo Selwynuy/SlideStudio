@@ -1,14 +1,23 @@
+"use client";
+
+import { cn } from "@/lib/utils";
+import { CtrlSection, CtrlLabel, CtrlSelect, Toggle } from "./editor-primitives";
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+interface GenerationSettings {
+  rawText: string;
+  tone: string;
+  complexity: string;
+  maxSlides: number;
+  focus: string;
+  hook: boolean;
+}
+
 interface InputTabProps {
   generateSlides: (isBatch: boolean) => Promise<void>;
   isLoading: boolean;
-  settings: {
-    rawText: string;
-    tone: string;
-    complexity: string;
-    maxSlides: number;
-    focus: string;
-    hook: boolean;
-  };
+  settings: GenerationSettings;
   setRawText: (value: string) => void;
   setTone: (value: string) => void;
   setComplexity: (value: string) => void;
@@ -18,6 +27,8 @@ interface InputTabProps {
   sourceText: string;
   batchOffset: number;
 }
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function InputTab({
   generateSlides,
@@ -32,157 +43,169 @@ export default function InputTab({
   sourceText,
   batchOffset,
 }: InputTabProps) {
-  const handleGenerate = (isBatch: boolean) => {
-    generateSlides(isBatch);
-  };
-
   return (
-    <div className="tab-pane active" id="tab-input">
-      <div className="ctrl-section">
-        <div className="ctrl-label">
-          Raw Content <span></span>
-        </div>
+    <div className="flex-1 overflow-y-auto flex flex-col">
+      {/* Raw content */}
+      <CtrlSection>
+        <CtrlLabel>Raw Content</CtrlLabel>
         <textarea
-          className="ctrl-textarea"
-          placeholder="Paste blog post, HTB writeup, script, notes, transcript…
-
-AI will intelligently split it into clean term-and-definition slides."
+          className={cn(
+            "w-full min-h-[140px] resize-y",
+            "bg-secondary border border-border rounded-md",
+            "text-foreground font-sans text-[12px] leading-[1.6]",
+            "px-3 py-2.5 outline-none transition-colors",
+            "placeholder:text-text-subtle",
+            "focus:border-primary"
+          )}
+          placeholder={"Paste blog post, HTB writeup, script, notes, transcript…\n\nAI will intelligently split it into clean term-and-definition slides."}
           rows={7}
           value={settings.rawText}
           onChange={(e) => setRawText(e.target.value)}
-        ></textarea>
-        <div style={{ display: "flex", gap: "6px", marginTop: "8px" }}>
-          {sourceText && (
-            <div className="batch-info" style={{display: 'flex'}}>
-              <span>
-                Batch <strong>{Math.ceil(batchOffset / 4000)}</strong> ·{" "}
-                <strong>
-                  {Math.round((batchOffset / sourceText.length) * 100)}%
-                </strong>{" "}
-                processed
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="ctrl-section">
-        <div className="ctrl-label">
-          Generation Settings <span></span>
-        </div>
-        <div className="ctrl-grid">
-          <div className="ctrl-item">
-            <label>Tone</label>
-            <select
-              className="ctrl-select"
-              value={settings.tone}
-              onChange={(e) => setTone(e.target.value)}
-            >
+        />
+
+        {sourceText && (
+          <div className={cn(
+            "mt-2 px-3 py-2.5 rounded-md flex items-center justify-between gap-2",
+            "bg-secondary border border-border text-[11px] text-muted-foreground"
+          )}>
+            <span>
+              Batch{" "}
+              <strong className="text-foreground">
+                {Math.ceil(batchOffset / 4000)}
+              </strong>{" "}
+              ·{" "}
+              <strong className="text-foreground">
+                {Math.round((batchOffset / sourceText.length) * 100)}%
+              </strong>{" "}
+              processed
+            </span>
+          </div>
+        )}
+      </CtrlSection>
+
+      {/* Generation settings */}
+      <CtrlSection>
+        <CtrlLabel>Generation Settings</CtrlLabel>
+        <div className="grid grid-cols-2 gap-2">
+          <CtrlField label="Tone">
+            <CtrlSelect value={settings.tone} onChange={(e) => setTone(e.target.value)}>
               <option value="educational">Educational</option>
               <option value="conversational">Conversational</option>
               <option value="motivational">Motivational</option>
               <option value="analytical">Analytical</option>
               <option value="casual">Casual</option>
-            </select>
-          </div>
-          <div className="ctrl-item">
-            <label>Complexity</label>
-            <select
-              className="ctrl-select"
-              value={settings.complexity}
-              onChange={(e) => setComplexity(e.target.value)}
-            >
+            </CtrlSelect>
+          </CtrlField>
+          <CtrlField label="Complexity">
+            <CtrlSelect value={settings.complexity} onChange={(e) => setComplexity(e.target.value)}>
               <option value="simple">Simple</option>
               <option value="intermediate">Intermediate</option>
               <option value="advanced">Advanced</option>
-            </select>
-          </div>
-          <div className="ctrl-item">
-            <label>Slides per Batch</label>
-            <select
-              className="ctrl-select"
+            </CtrlSelect>
+          </CtrlField>
+          <CtrlField label="Slides per Batch">
+            <CtrlSelect
               value={settings.maxSlides}
               onChange={(e) => setMaxSlides(parseInt(e.target.value))}
             >
-              {Array.from({ length: 20 }, (_, i) => i + 1).map((num) => (
-                <option key={num} value={num}>
-                  {num}
-                </option>
+              {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>{n}</option>
               ))}
-            </select>
-          </div>
-          <div className="ctrl-item">
-            <label>Focus</label>
-            <select
-              className="ctrl-select"
-              value={settings.focus}
-              onChange={(e) => setFocus(e.target.value)}
-            >
+            </CtrlSelect>
+          </CtrlField>
+          <CtrlField label="Focus">
+            <CtrlSelect value={settings.focus} onChange={(e) => setFocus(e.target.value)}>
               <option value="key_points">Key Points</option>
-              <option value="tips">Tips & Advice</option>
-              <option value="facts">Facts & Stats</option>
+              <option value="tips">Tips &amp; Advice</option>
+              <option value="facts">Facts &amp; Stats</option>
               <option value="steps">Steps / How-To</option>
-              <option value="terms">Terms & Defs</option>
-            </select>
-          </div>
+              <option value="terms">Terms &amp; Defs</option>
+            </CtrlSelect>
+          </CtrlField>
         </div>
-      </div>
-      <div className="ctrl-section">
-        <div className="toggle-row">
+      </CtrlSection>
+
+      {/* Hook toggle */}
+      <CtrlSection>
+        <div className="flex items-center justify-between py-2">
           <div>
-            <div className="toggle-label">Hook Slide</div>
-            <div className="toggle-sub">
+            <div className="text-[12px] text-foreground font-medium">Hook Slide</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
               Auto-generate attention-grabbing opener
             </div>
           </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={settings.hook}
-              onChange={(e) => setHook(e.target.checked)}
-            />
-            <span className="toggle-slider"></span>
-          </label>
+          <Toggle checked={settings.hook} onChange={setHook} />
         </div>
-      </div>
-      <div
-        style={{
-          padding: "12px 14px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-        }}
-      >
+      </CtrlSection>
+
+      {/* Generate actions */}
+      <div className="px-3.5 py-3 flex flex-col gap-2">
         {isLoading && (
-          <div className="ai-loading show" id="aiLoading">
-            <div className="dots">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <span id="loadingText">Generating slides…</span>
+          <div className={cn(
+            "flex items-center gap-2 px-3 py-2.5 rounded-md",
+            "bg-primary/8 border border-primary/20 text-[11px] text-primary font-mono"
+          )}>
+            <AiDots />
+            <span>Generating slides…</span>
           </div>
         )}
+
         <button
-          className="btn btn-cyan"
-          onClick={() => handleGenerate(false)}
+          onClick={() => generateSlides(false)}
           disabled={isLoading}
-          style={{
-            justifyContent: "center",
-            width: "100%",
-            padding: "11px",
-          }}
+          className={cn(
+            "w-full flex items-center justify-center px-3 py-[11px] rounded-md",
+            "text-[12px] font-bold cursor-pointer transition-all",
+            "bg-primary text-primary-foreground",
+            "hover:bg-primary/90 hover:-translate-y-px hover:shadow-[0_4px_16px_var(--cyan-glow)]",
+            "active:translate-y-0",
+            "disabled:opacity-35 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none"
+          )}
         >
           {isLoading ? "Generating..." : "✦ Generate Slides"}
         </button>
+
         <button
-          className="btn btn-ghost btn-sm"
-          onClick={() => handleGenerate(true)}
+          onClick={() => generateSlides(true)}
           disabled={isLoading || !sourceText}
-          style={{ justifyContent: "center" }}
+          className={cn(
+            "w-full flex items-center justify-center px-3 py-[7px] rounded-md",
+            "text-[11px] font-semibold cursor-pointer transition-all",
+            "bg-transparent text-muted-foreground border border-border-strong",
+            "hover:bg-secondary hover:text-foreground hover:border-border",
+            "disabled:opacity-35 disabled:cursor-not-allowed"
+          )}
         >
           + Generate More from Same Content
         </button>
       </div>
+    </div>
+  );
+}
+
+// ── Local helper components ───────────────────────────────────────────────────
+
+function CtrlField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block font-mono text-[9px] tracking-[1px] uppercase text-muted-foreground mb-[5px]">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function AiDots() {
+  return (
+    <div className="flex gap-[3px]">
+      {[0, 200, 400].map((delay) => (
+        <span
+          key={delay}
+          className="w-[5px] h-[5px] rounded-full bg-primary"
+          style={{ animation: `dotpulse 1.2s ${delay}ms infinite ease-in-out` }}
+        />
+      ))}
     </div>
   );
 }

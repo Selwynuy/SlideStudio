@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Folder, RotateCcw, LogOut, Sparkles, Check } from "lucide-react";
 import { AspectRatio, ASPECT_RATIO_DIMENSIONS } from "@/types/slide";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   slideCount: number;
@@ -26,6 +27,75 @@ interface HeaderProps {
   onSelectProject?: (id: string) => void;
   aspectRatio?: AspectRatio;
 }
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function HeaderLogo() {
+  return (
+    <span className="font-display text-2xl tracking-[2px] shrink-0">
+      SLIDE<em className="text-primary not-italic">STUDIO</em>
+    </span>
+  );
+}
+
+interface HeaderCenterMetaProps {
+  slideCount: number;
+  aspectRatio: AspectRatio;
+}
+
+function HeaderCenterMeta({ slideCount, aspectRatio }: HeaderCenterMetaProps) {
+  const dims = ASPECT_RATIO_DIMENSIONS[aspectRatio];
+  const platformLabel =
+    aspectRatio === "9:16"
+      ? "TIKTOK OPTIMIZED"
+      : aspectRatio === "1:1"
+      ? "INSTAGRAM / SQUARE"
+      : "CLASSIC / PRESENTATION";
+
+  return (
+    <div className="hidden lg:flex items-center gap-4 font-mono text-[10px] text-muted-foreground tracking-[1.5px]">
+      <span>{slideCount} SLIDES</span>
+      <span>·</span>
+      <span>{dims.label.toUpperCase()}</span>
+      <span>·</span>
+      <span>{platformLabel}</span>
+    </div>
+  );
+}
+
+interface SaveStatusBadgeProps {
+  saveStatus?: "saved" | "saving" | "error" | null;
+  isLoadingSlideshow?: boolean;
+}
+
+function SaveStatusBadge({ saveStatus, isLoadingSlideshow }: SaveStatusBadgeProps) {
+  if (isLoadingSlideshow) {
+    return (
+      <span className="text-[11px] text-muted-foreground">Loading...</span>
+    );
+  }
+  if (saveStatus === "saving") {
+    return (
+      <span className="text-[11px] text-muted-foreground">Saving...</span>
+    );
+  }
+  if (saveStatus === "saved") {
+    return (
+      <span className="flex items-center gap-1 text-[11px] text-success">
+        <Check className="size-3" />
+        Saved
+      </span>
+    );
+  }
+  if (saveStatus === "error") {
+    return (
+      <span className="text-[11px] text-destructive">Save failed</span>
+    );
+  }
+  return null;
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
 
 export default function Header({
   slideCount,
@@ -41,75 +111,66 @@ export default function Header({
   const { user } = useUser();
   const router = useRouter();
 
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/auth/login");
+    router.refresh();
+  };
+
   return (
     <>
-      <header className={menuOpen ? "nav-open" : ""}>
-        <div className="logo">
-          SLIDE<em>STUDIO</em>
-        </div>
+      {/* ── App bar ─────────────────────────────────────────────────────────── */}
+      <header
+        className={cn(
+          "h-12 flex items-center justify-between px-5 border-b border-border",
+          "shrink-0 bg-background z-50",
+          menuOpen && "nav-open"
+        )}
+      >
+        <HeaderLogo />
 
-        <div className="hdr-center">
-          <span id="slideCountBadge">{slideCount} SLIDES</span>
-          <span>·</span>
-          <span>{ASPECT_RATIO_DIMENSIONS[aspectRatio].label.toUpperCase()}</span>
-          <span>·</span>
-          <span>{aspectRatio === "9:16" ? "TIKTOK OPTIMIZED" : aspectRatio === "1:1" ? "INSTAGRAM / SQUARE" : "CLASSIC / PRESENTATION"}</span>
-        </div>
+        <HeaderCenterMeta slideCount={slideCount} aspectRatio={aspectRatio} />
 
-        {/* Desktop-only right section */}
-        <div className="hdr-right hdr-right-desktop">
-          <span className="hdr-badge badge-cyan" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        {/* Desktop right section */}
+        <div className="hidden lg:flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 px-2 py-[3px] rounded-[3px] text-[9px] font-mono tracking-[1px] bg-cyan-tint text-primary border border-primary/20">
             <Sparkles className="size-3" />
             GEMINI AI
           </span>
-          {saveStatus === "saving" && (
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              Saving...
-            </span>
-          )}
-          {saveStatus === "saved" && (
-            <span style={{ fontSize: '11px', color: 'var(--green)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Check className="size-3" />
-              Saved
-            </span>
-          )}
-          {saveStatus === "error" && (
-            <span style={{ fontSize: '11px', color: 'var(--red)' }}>Save failed</span>
-          )}
-          {isLoadingSlideshow && (
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Loading...</span>
-          )}
+
+          <SaveStatusBadge
+            saveStatus={saveStatus}
+            isLoadingSlideshow={isLoadingSlideshow}
+          />
+
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  style={{ cursor: 'pointer', border: 'none', background: 'transparent', padding: 0 }}
+                  className="cursor-pointer border-none bg-transparent p-0"
                   aria-label="User menu"
                 >
                   <CurrentUserAvatar />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                <DropdownMenuLabel style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
+              <DropdownMenuContent align="end" className="w-48 font-mono">
+                <DropdownMenuLabel className="font-mono">
+                  <span className="text-[11px] text-muted-foreground tracking-[0.5px]">
                     {user.email}
-                  </div>
+                  </span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => {
-                    setProjectSelectorOpen(true);
-                  }}
-                  style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', letterSpacing: '0.5px' }}
+                  onClick={() => setProjectSelectorOpen(true)}
+                  className="font-mono text-[11px] tracking-[0.5px]"
                 >
                   <Folder className="size-4" />
                   Projects
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => {
-                    onNewSession();
-                  }}
-                  style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', letterSpacing: '0.5px' }}
+                  onClick={onNewSession}
+                  className="font-mono text-[11px] tracking-[0.5px]"
                 >
                   <RotateCcw className="size-4" />
                   New Project
@@ -117,13 +178,8 @@ export default function Header({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={async () => {
-                    const supabase = createClient();
-                    await supabase.auth.signOut();
-                    router.push('/auth/login');
-                    router.refresh();
-                  }}
-                  style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', letterSpacing: '0.5px' }}
+                  onClick={handleSignOut}
+                  className="font-mono text-[11px] tracking-[0.5px]"
                 >
                   <LogOut className="size-4" />
                   Sign Out
@@ -132,121 +188,154 @@ export default function Header({
             </DropdownMenu>
           ) : (
             <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => router.push('/auth/login')}
-              title="Sign in"
+              onClick={() => router.push("/auth/login")}
+              className={cn(
+                "inline-flex items-center gap-1 px-2.5 py-[5px] rounded-[5px]",
+                "text-[11px] font-semibold cursor-pointer transition-all",
+                "bg-transparent text-muted-foreground border border-border-strong",
+                "hover:bg-secondary hover:text-foreground hover:border-border"
+              )}
             >
               Sign In
             </button>
           )}
         </div>
 
+        {/* Mobile / tablet hamburger button */}
         <button
           type="button"
-          className="hdr-toggle"
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((open) => !open)}
+          onClick={() => setMenuOpen((o) => !o)}
+          className={cn(
+            "lg:hidden inline-flex items-center justify-center",
+            "ml-auto w-8 h-8 rounded-md border border-border-strong",
+            "bg-transparent text-muted-foreground cursor-pointer",
+            "hover:bg-secondary hover:text-foreground"
+          )}
         >
-          <span className="hdr-toggle-lines" />
+          {/* Animated hamburger lines */}
+          <span className="relative flex flex-col items-center justify-center w-4 h-4 gap-[4px]">
+            <span
+              className={cn(
+                "block w-4 h-[2px] rounded-full bg-current transition-all duration-200",
+                menuOpen && "translate-y-[6px] rotate-45"
+              )}
+            />
+            <span
+              className={cn(
+                "block w-4 h-[2px] rounded-full bg-current transition-all duration-200",
+                menuOpen && "opacity-0"
+              )}
+            />
+            <span
+              className={cn(
+                "block w-4 h-[2px] rounded-full bg-current transition-all duration-200",
+                menuOpen && "-translate-y-[6px] -rotate-45"
+              )}
+            />
+          </span>
         </button>
       </header>
 
-      {/* Mobile full-vertical overlay menu (only New Session) */}
+      {/* ── Mobile drawer overlay ────────────────────────────────────────────── */}
       <div
-        className={`hdr-menu-overlay${menuOpen ? " open" : ""}`}
+        className={cn(
+          "fixed inset-0 z-[200] lg:hidden",
+          "flex items-stretch justify-end",
+          "bg-black/88 transition-opacity duration-[280ms]",
+          menuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
         onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            setMenuOpen(false);
-          }
+          if (e.target === e.currentTarget) setMenuOpen(false);
         }}
       >
-        <div className="hdr-menu">
+        <div
+          className={cn(
+            "w-[75vw] max-w-[340px] h-full flex flex-col gap-3",
+            "bg-card rounded-l-2xl px-[18px] py-5 pb-6",
+            "transition-[transform,opacity] duration-300",
+            menuOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+          )}
+        >
+          {/* Close button */}
           <button
             type="button"
-            className="hdr-menu-close"
             aria-label="Close menu"
             onClick={() => setMenuOpen(false)}
+            className="self-end bg-transparent border-none text-foreground text-[22px] cursor-pointer pb-2"
           >
             ×
           </button>
-          {user && (
+
+          {user ? (
             <>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '12px', 
-                padding: '8px 0', 
-                borderBottom: '1px solid var(--border)', 
-                marginBottom: '8px'
-              }}>
+              {/* User info */}
+              <div className="flex items-center gap-3 pb-2 border-b border-border mb-1">
                 <CurrentUserAvatar />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.5px' }}>
-                    {user.email}
-                  </span>
-                </div>
+                <span className="text-[11px] text-muted-foreground font-mono tracking-[0.5px] flex-1 truncate">
+                  {user.email}
+                </span>
               </div>
+
+              {/* Menu items */}
+              {[
+                { icon: <Folder className="size-4" />, label: "Projects", action: () => { setProjectSelectorOpen(true); setMenuOpen(false); } },
+                { icon: <RotateCcw className="size-4" />, label: "New Project", action: () => { onNewSession(); setMenuOpen(false); } },
+              ].map(({ icon, label, action }) => (
+                <button
+                  key={label}
+                  onClick={action}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 px-3 py-[5px] rounded-[5px]",
+                    "text-[11px] font-semibold font-mono tracking-[0.5px] cursor-pointer transition-all",
+                    "bg-transparent text-muted-foreground border border-border-strong",
+                    "hover:bg-secondary hover:text-foreground hover:border-border"
+                  )}
+                >
+                  {icon}
+                  {label}
+                </button>
+              ))}
+
               <button
-                className="btn btn-ghost btn-sm hdr-menu-item"
-                onClick={() => {
-                  setProjectSelectorOpen(true);
-                  setMenuOpen(false);
-                }}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', letterSpacing: '0.5px' }}
-              >
-                <Folder className="size-4" />
-                Projects
-              </button>
-              <button
-                className="btn btn-ghost btn-sm hdr-menu-item"
-                onClick={() => {
-                  onNewSession();
-                  setMenuOpen(false);
-                }}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', letterSpacing: '0.5px' }}
-              >
-                <RotateCcw className="size-4" />
-                New Project
-              </button>
-              <button
-                className="btn btn-ghost btn-sm hdr-menu-item"
                 onClick={async () => {
-                  const supabase = createClient();
-                  await supabase.auth.signOut();
-                  router.push('/auth/login');
-                  router.refresh();
+                  await handleSignOut();
                   setMenuOpen(false);
                 }}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', letterSpacing: '0.5px', color: 'var(--red)' }}
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 px-3 py-[5px] rounded-[5px]",
+                  "text-[11px] font-semibold font-mono tracking-[0.5px] cursor-pointer transition-all",
+                  "bg-transparent text-destructive border border-destructive/30",
+                  "hover:bg-destructive/10"
+                )}
               >
                 <LogOut className="size-4" />
                 Sign Out
               </button>
             </>
-          )}
-          {!user && (
+          ) : (
             <button
-              className="btn btn-ghost btn-sm hdr-menu-item"
-              onClick={() => {
-                router.push('/auth/login');
-                setMenuOpen(false);
-              }}
+              onClick={() => { router.push("/auth/login"); setMenuOpen(false); }}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 px-3 py-[5px] rounded-[5px]",
+                "text-[11px] font-semibold cursor-pointer transition-all",
+                "bg-transparent text-muted-foreground border border-border-strong",
+                "hover:bg-secondary hover:text-foreground"
+              )}
             >
               Sign In
             </button>
           )}
         </div>
       </div>
-      
+
       <ProjectSelector
         isOpen={projectSelectorOpen}
         onClose={() => setProjectSelectorOpen(false)}
-        onSelect={(id) => {
-          if (onSelectProject) onSelectProject(id);
-        }}
+        onSelect={(id) => onSelectProject?.(id)}
         onCreateNew={onNewSession}
-        currentSlideshowId={currentSlideshowId || null}
+        currentSlideshowId={currentSlideshowId ?? null}
       />
     </>
   );

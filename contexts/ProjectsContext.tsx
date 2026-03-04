@@ -35,8 +35,9 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       const data = await listSlideshows()
       setProjects(data)
       setHasFetched(true)
-    } catch (err: any) {
-      setError(err.message || 'Failed to load projects')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to load projects'
+      setError(msg)
       console.error('Error fetching projects:', err)
     } finally {
       setIsLoading(false)

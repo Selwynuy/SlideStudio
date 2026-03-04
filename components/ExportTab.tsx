@@ -2,25 +2,32 @@
 
 import { Slide, AspectRatio, ASPECT_RATIO_DIMENSIONS } from "@/types/slide";
 import React, { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+import { CtrlSection, CtrlLabel, CtrlSelect, Toggle } from "./editor-primitives";
+import { formatSlideNum } from "@/lib/utils";
 
 interface ExportTabProps {
   slides: Slide[];
   exportJson: () => void;
-  exportAll: (format: 'png' | 'jpg', asZip?: boolean) => void;
-  exportSelected: (indices: number[], format: 'png' | 'jpg', asZip?: boolean) => void;
+  exportAll: (format: "png" | "jpg", asZip?: boolean) => void;
+  exportSelected: (indices: number[], format: "png" | "jpg", asZip?: boolean) => void;
   aspectRatio?: AspectRatio;
 }
 
-export default function ExportTab({ slides, exportJson, exportAll, exportSelected, aspectRatio = "9:16" }: ExportTabProps) {
-  const [exportFormat, setExportFormat] = useState<'png' | 'jpg'>('png');
+export default function ExportTab({
+  slides,
+  exportJson,
+  exportAll,
+  exportSelected,
+  aspectRatio = "9:16",
+}: ExportTabProps) {
+  const [exportFormat, setExportFormat] = useState<"png" | "jpg">("png");
   const [exportAsZip, setExportAsZip] = useState(false);
-  
-  const dims = ASPECT_RATIO_DIMENSIONS[aspectRatio];
-
-  // Selective export state
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
 
-  // By default, keep all slides selected; reset whenever slides change
+  const dims = ASPECT_RATIO_DIMENSIONS[aspectRatio];
+
+  // Sync selection when slides change
   useEffect(() => {
     setSelectedIndices(slides.map((_, i) => i));
   }, [slides]);
@@ -31,188 +38,120 @@ export default function ExportTab({ slides, exportJson, exportAll, exportSelecte
     );
   };
 
-  const handleExportAll = () => {
-    exportAll(exportFormat, exportAsZip);
-  };
-
-  const handleExportSelected = () => {
-    exportSelected(selectedIndices, exportFormat, exportAsZip);
-  };
-
   return (
-    <div className="tab-pane active" id="tab-export">
-      <div className="ctrl-section">
-        <div className="ctrl-label">
-          Export Settings <span></span>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <div className="ctrl-item">
-            <label>Format</label>
-            <select
-              className="ctrl-select"
-              id="exportFormat"
-              value={exportFormat}
-              onChange={(e) => setExportFormat(e.target.value as 'png' | 'jpg')}
-            >
-              <option value="png">PNG (Lossless)</option>
-              <option value="jpg">JPEG (Smaller)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className="ctrl-section">
-        <div className="ctrl-label">
-          Image Export <span></span>
-        </div>
-        <div
-          style={{
-            fontSize: "11px",
-            color: "var(--text-muted)",
-            marginBottom: "10px",
-            lineHeight: 1.6,
-          }}
-        >
-          Exports {dims.width}×{dims.height}px {exportFormat.toUpperCase()} images ({dims.label}) using the settings above.
-        </div>
-        <div className="toggle-row" style={{ marginBottom: "10px" }}>
-          <div>
-            <div className="toggle-label" style={{ fontSize: "12px" }}>
-              Export as ZIP
-            </div>
-            <div className="toggle-sub">Download all images in a single ZIP file</div>
-          </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={exportAsZip}
-              onChange={(e) => setExportAsZip(e.target.checked)}
-            />
-            <span className="toggle-slider"></span>
+    <div className="flex-1 overflow-y-auto flex flex-col">
+      {/* ── Format settings ─────────────────────────────────────────────────── */}
+      <CtrlSection>
+        <CtrlLabel>Export Settings</CtrlLabel>
+        <div>
+          <label className="block font-mono text-[9px] tracking-[1px] uppercase text-muted-foreground mb-[5px]">
+            Format
           </label>
+          <CtrlSelect
+            value={exportFormat}
+            onChange={(e) => setExportFormat(e.target.value as "png" | "jpg")}
+          >
+            <option value="png">PNG (Lossless)</option>
+            <option value="jpg">JPEG (Smaller)</option>
+          </CtrlSelect>
         </div>
+      </CtrlSection>
+
+      {/* ── Image export ────────────────────────────────────────────────────── */}
+      <CtrlSection>
+        <CtrlLabel>Image Export</CtrlLabel>
+        <p className="text-[11px] text-muted-foreground mb-2.5 leading-[1.6]">
+          Exports {dims.width}×{dims.height}px {exportFormat.toUpperCase()} ({dims.label}).
+        </p>
+
+        {/* ZIP toggle */}
+        <div className="flex items-center justify-between mb-2.5 py-2">
+          <div>
+            <div className="text-[12px] text-foreground font-medium">Export as ZIP</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              Download all images in a single ZIP file
+            </div>
+          </div>
+          <Toggle checked={exportAsZip} onChange={setExportAsZip} />
+        </div>
+
         <button
-          className="btn btn-cyan"
-          onClick={handleExportAll}
+          onClick={() => exportAll(exportFormat, exportAsZip)}
           disabled={slides.length === 0}
-          style={{ width: "100%", justifyContent: "center", padding: "11px" }}
+          className={cn(
+            "w-full flex items-center justify-center px-3 py-[11px] rounded-md",
+            "text-[12px] font-bold cursor-pointer transition-all",
+            "bg-primary text-primary-foreground",
+            "hover:bg-primary/90 hover:-translate-y-px hover:shadow-[0_4px_16px_var(--cyan-glow)]",
+            "active:translate-y-0",
+            "disabled:opacity-35 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none"
+          )}
         >
           ↓ Export All Slides ({exportFormat.toUpperCase()})
           {exportAsZip && " as ZIP"}
         </button>
-      </div>
+      </CtrlSection>
 
-      <div className="ctrl-section">
-        <div className="ctrl-label">
-          JSON Export <span></span>
-        </div>
-        <div
-          style={{
-            fontSize: "11px",
-            color: "var(--text-muted)",
-            marginBottom: "10px",
-            lineHeight: 1.6,
-          }}
-        >
-          Export all slides as structured JSON.
-        </div>
+      {/* ── JSON export ─────────────────────────────────────────────────────── */}
+      <CtrlSection>
+        <CtrlLabel>JSON Export</CtrlLabel>
+        <p className="text-[11px] text-muted-foreground mb-2.5 leading-[1.6]">
+          Export all slides as structured JSON for backup or import.
+        </p>
         <button
-          className="btn btn-ghost btn-sm"
           onClick={exportJson}
           disabled={slides.length === 0}
-          style={{ width: "100%", justifyContent: "center" }}
+          className={cn(
+            "w-full flex items-center justify-center px-2.5 py-[7px] rounded-[5px]",
+            "text-[11px] font-semibold cursor-pointer transition-all",
+            "bg-transparent text-muted-foreground border border-border-strong",
+            "hover:bg-secondary hover:text-foreground hover:border-border",
+            "disabled:opacity-35 disabled:cursor-not-allowed"
+          )}
         >
-          {"{ } Download JSON"}
+          {"{ }"} Download JSON
         </button>
-      </div>
+      </CtrlSection>
 
-      <div className="ctrl-section">
-        <div className="ctrl-label">
-          Selective Export <span></span>
-        </div>
-        <div
-          style={{
-            fontSize: "11px",
-            color: "var(--text-muted)",
-            marginBottom: "10px",
-            lineHeight: 1.6,
-          }}
-        >
+      {/* ── Selective export ────────────────────────────────────────────────── */}
+      <CtrlSection>
+        <CtrlLabel>Selective Export</CtrlLabel>
+        <p className="text-[11px] text-muted-foreground mb-2.5 leading-[1.6]">
           Pick specific slides to export.
-        </div>
+        </p>
 
         {slides.length > 0 && (
-          <div
-            style={{
-              border: "1px solid var(--border)",
-              borderRadius: "6px",
-              overflow: "hidden",
-            }}
-          >
+          <div className="rounded-md border border-border overflow-hidden">
             {/* Selection summary */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                padding: "6px 8px",
-                borderBottom: "1px solid var(--border)",
-                background: "var(--bg-panel)",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "11px",
-                  color: "var(--text-muted)",
-                  whiteSpace: "nowrap",
-                }}
-              >
+            <div className="flex justify-end px-2 py-1.5 border-b border-border bg-card">
+              <span className="text-[11px] text-muted-foreground whitespace-nowrap">
                 Selected {selectedIndices.length}/{slides.length}
               </span>
             </div>
 
             {/* Slide list */}
-            <div style={{ maxHeight: "220px", overflowY: "auto" }}>
+            <div className="max-h-[220px] overflow-y-auto">
               {slides.map((slide, i) => {
                 const checked = selectedIndices.includes(i);
                 return (
                   <label
                     key={slide.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "7px 10px",
-                      cursor: "pointer",
-                      borderBottom: i < slides.length - 1 ? "1px solid var(--border)" : "none",
-                      background: checked ? "var(--bg-hover)" : "transparent",
-                      transition: "background 0.1s",
-                    }}
+                    className={cn(
+                      "flex items-center gap-2.5 px-2.5 py-[7px] cursor-pointer transition-colors",
+                      i < slides.length - 1 && "border-b border-border",
+                      checked ? "bg-cyan-tint/40" : "bg-transparent hover:bg-secondary"
+                    )}
                   >
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleIndex(i)}
-                      style={{ accentColor: "var(--cyan)", flexShrink: 0 }}
+                      className="accent-primary shrink-0"
                     />
-                    <span
-                      style={{
-                        fontSize: "10px",
-                        color: "var(--text-muted)",
-                        minWidth: "20px",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {String(i + 1).padStart(2, "0")}
+                    <span className="font-mono text-[10px] text-muted-foreground min-w-[20px] shrink-0">
+                      {formatSlideNum(i + 1)}
                     </span>
-                    <span
-                      style={{
-                        fontSize: "12px",
-                        color: "var(--text-primary)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <span className="text-[12px] text-foreground truncate">
                       {slide.title || "(no title)"}
                     </span>
                   </label>
@@ -221,19 +160,24 @@ export default function ExportTab({ slides, exportJson, exportAll, exportSelecte
             </div>
 
             {/* Confirm export */}
-            <div style={{ padding: "8px", borderTop: "1px solid var(--border)", background: "var(--bg-panel)" }}>
+            <div className="px-2 py-2 border-t border-border bg-card">
               <button
-                className="btn btn-cyan"
-                onClick={handleExportSelected}
+                onClick={() => exportSelected(selectedIndices, exportFormat, exportAsZip)}
                 disabled={selectedIndices.length === 0}
-                style={{ width: "100%", justifyContent: "center", padding: "9px" }}
+                className={cn(
+                  "w-full flex items-center justify-center px-3 py-[9px] rounded-md",
+                  "text-[12px] font-bold cursor-pointer transition-all",
+                  "bg-primary text-primary-foreground",
+                  "hover:bg-primary/90",
+                  "disabled:opacity-35 disabled:cursor-not-allowed"
+                )}
               >
                 ↓ Export Selected ({selectedIndices.length})
               </button>
             </div>
           </div>
         )}
-      </div>
+      </CtrlSection>
     </div>
   );
 }

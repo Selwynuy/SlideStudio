@@ -12,6 +12,10 @@ interface SlidesTabProps {
   onDeleteSlide: (index: number) => void;
 }
 
+/**
+ * Thin wrapper that embeds <SlideList> inside the editor panel SLIDES tab
+ * (shown on tablet/mobile where the left sidebar is hidden).
+ */
 export default function SlidesTab({
   slides,
   activeIdx,
@@ -21,7 +25,7 @@ export default function SlidesTab({
   onDeleteSlide,
 }: SlidesTabProps) {
   return (
-    <div className="slides-tab-pane">
+    <div className="flex flex-col overflow-hidden min-h-0 flex-1">
       <SlideList
         slides={slides}
         activeIdx={activeIdx}

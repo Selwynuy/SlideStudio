@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { Slide } from '@/types/slide'
 
 export async function PATCH(
   request: Request,
@@ -16,7 +17,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const updates: { slide_data?: any; order_index?: number } = {}
+    const updates: { slide_data?: Slide; order_index?: number } = {}
     
     if (body.slide_data !== undefined) updates.slide_data = body.slide_data
     if (body.order_index !== undefined) updates.order_index = body.order_index
@@ -28,7 +29,9 @@ export async function PATCH(
       .eq('id', id)
       .single()
 
-    if (!slide || (slide.slideshows as any).user_id !== user.id) {
+    const joinedOwner = slide?.slideshows as { user_id: string } | { user_id: string }[] | null
+    const ownerId = Array.isArray(joinedOwner) ? joinedOwner[0]?.user_id : joinedOwner?.user_id
+    if (!slide || ownerId !== user.id) {
       return NextResponse.json({ error: 'Slide not found' }, { status: 404 })
     }
 
@@ -73,7 +76,9 @@ export async function DELETE(
       .eq('id', id)
       .single()
 
-    if (!slide || (slide.slideshows as any).user_id !== user.id) {
+    const joinedOwner2 = slide?.slideshows as { user_id: string } | { user_id: string }[] | null
+    const ownerId2 = Array.isArray(joinedOwner2) ? joinedOwner2[0]?.user_id : joinedOwner2?.user_id
+    if (!slide || ownerId2 !== user.id) {
       return NextResponse.json({ error: 'Slide not found' }, { status: 404 })
     }
 
