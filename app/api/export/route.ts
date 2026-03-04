@@ -40,9 +40,8 @@ export async function POST(request: NextRequest) {
     // chromium.executablePath(url) will download & extract the tarball into /tmp in serverless.
     const browser = await puppeteer.launch({
       args: chromium.args,
-      defaultViewport: chromium.defaultViewport ?? null,
       executablePath: await chromium.executablePath(chromiumPackUrl),
-      headless: chromium.headless,
+      headless: true,
     });
 
     try {
